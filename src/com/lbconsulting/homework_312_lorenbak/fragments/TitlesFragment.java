@@ -1,4 +1,4 @@
-package com.lbconsulting.homework_312_lorenbak;
+package com.lbconsulting.homework_312_lorenbak.fragments;
 
 import android.app.Activity;
 import android.database.Cursor;
@@ -21,6 +21,10 @@ import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.lbconsulting.homework_312_lorenbak.MyLog;
+import com.lbconsulting.homework_312_lorenbak.R;
+import com.lbconsulting.homework_312_lorenbak.TextProgressBar;
+import com.lbconsulting.homework_312_lorenbak.adapters.TitlesCursorAdaptor;
 import com.lbconsulting.homework_312_lorenbak.database.RSS_ItemsTable;
 
 public class TitlesFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {

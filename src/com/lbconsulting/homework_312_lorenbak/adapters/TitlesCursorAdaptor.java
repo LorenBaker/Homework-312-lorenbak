@@ -1,4 +1,4 @@
-package com.lbconsulting.homework_312_lorenbak;
+package com.lbconsulting.homework_312_lorenbak.adapters;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -12,6 +12,11 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.lbconsulting.homework_312_lorenbak.MyLog;
+import com.lbconsulting.homework_312_lorenbak.R;
+import com.lbconsulting.homework_312_lorenbak.R.color;
+import com.lbconsulting.homework_312_lorenbak.R.id;
+import com.lbconsulting.homework_312_lorenbak.R.layout;
 import com.lbconsulting.homework_312_lorenbak.database.RSS_ItemsTable;
 
 public class TitlesCursorAdaptor extends CursorAdapter {

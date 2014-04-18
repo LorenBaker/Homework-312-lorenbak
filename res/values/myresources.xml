@@ -42,6 +42,7 @@
 	<color name="cyan">#00FFFF</color>
 	<color name="cyanDark">#008B8B</color>
 	<color name="cyanLight">#E0FFFF</color>
+	<color name="DarkActionBarBackground">#222222</color>
 	<color name="firebrick">#B22222</color>
 	<color name="fuchsia">#FF00FF</color>
 	<color name="gainsboro">#DCDCDC</color>

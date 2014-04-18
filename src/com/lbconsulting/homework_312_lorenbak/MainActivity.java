@@ -5,7 +5,11 @@ import java.io.InputStream;
 
 import org.xmlpull.v1.XmlPullParserException;
 
+import android.app.LoaderManager;
+import android.content.CursorLoader;
+import android.content.Loader;
 import android.content.res.AssetManager;
+import android.database.Cursor;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -14,14 +18,16 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
-import com.lbconsulting.homework_312_lorenbak.TitlesFragment.OnTitleSelected;
 import com.lbconsulting.homework_312_lorenbak.RSSreader.RSS_Parser;
+import com.lbconsulting.homework_312_lorenbak.adapters.NewsFeedsSpinnerCursorAdapter;
+import com.lbconsulting.homework_312_lorenbak.database.RSS_ChannelsTable;
+import com.lbconsulting.homework_312_lorenbak.fragments.TitlesFragment;
+import com.lbconsulting.homework_312_lorenbak.fragments.TitlesFragment.OnTitleSelected;
 
 public class MainActivity extends ActionBarActivity implements ActionBar.OnNavigationListener, OnTitleSelected,
-		SensorEventListener {
+		SensorEventListener, LoaderManager.LoaderCallbacks<Cursor> {
 
 	/**
 	 * The serialization (saved instance state) Bundle key representing the
@@ -30,35 +36,54 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 	private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
 	private long mActiveChannelID = 1;
 
+	private LoaderManager mLoaderManager = null;
+	private LoaderManager.LoaderCallbacks<Cursor> mNewsFeedsCallbacks;
+	private NewsFeedsSpinnerCursorAdapter mNewsFeedsCursorAdapter;
+	private static final int NEWS_FEEDS_LOADER_ID = 2;
+
 	// private String DATA_FILENAME = "sample-rss-2.xml";
+	private String DATA_FILENAME = "GoogleNews.download.xml";
 
-	// private String DATA_FILENAME = "GoogleNews.download.xml";
-
-	private String DATA_FILENAME = "Yahoo.download.xml";
+	// private String DATA_FILENAME = "Yahoo.download.xml";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
+		// verify that news feeds exist ... if not create some.
+		Cursor newsFeedURLs = RSS_ChannelsTable.getAllNewsFeedsCursor(this);
+		if (newsFeedURLs == null || newsFeedURLs.getCount() == 0) {
+			// No news feeds exist ... so create some
+			String[] urls = this.getResources().getStringArray(R.array.newsFeedURLs);
+			String[] titles = this.getResources().getStringArray(R.array.newsFeedTitles);
+			int i = 0;
+			String title = null;
+			for (String url : urls) {
+				title = titles[i];
+				RSS_ChannelsTable.CreateChannel(this, url, title);
+				i++;
+			}
+		}
+		if (newsFeedURLs != null) {
+			newsFeedURLs.close();
+		}
+
 		// Set up the action bar to show a dropdown list.
 		final ActionBar actionBar = getSupportActionBar();
 		actionBar.setDisplayShowTitleEnabled(false);
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
 
+		// Set up the adapter for the ActionBar dropdown list
+		mNewsFeedsCursorAdapter = new NewsFeedsSpinnerCursorAdapter(this, null, 0);
+		mNewsFeedsCallbacks = this;
+		mLoaderManager = getLoaderManager();
+		mLoaderManager.initLoader(NEWS_FEEDS_LOADER_ID, null, mNewsFeedsCallbacks);
+
 		// Set up the dropdown list navigation in the action bar.
 		actionBar.setListNavigationCallbacks(
-				// Specify a SpinnerAdapter to populate the dropdown list.
-				new ArrayAdapter<String>(
-						actionBar.getThemedContext(),
-						android.R.layout.simple_list_item_1,
-						android.R.id.text1,
-						new String[] {
-								getString(R.string.title_section1),
-								getString(R.string.title_section2),
-								getString(R.string.title_section3),
-						}),
-				this);
+				// Specify a Adapter to populate the dropdown list.
+				mNewsFeedsCursorAdapter, this);
 	}
 
 	@Override
@@ -149,7 +174,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 	public boolean onNavigationItemSelected(int position, long id) {
 		// When the given dropdown item is selected, show its contents in the
 		// container view.
-		// TODO replace mActiveChannelID with id
+		mActiveChannelID = id;
 		getSupportFragmentManager().beginTransaction()
 				.replace(R.id.container, TitlesFragment.newInstance(mActiveChannelID))
 				.commit();
@@ -209,6 +234,29 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 	@Override
 	public void OnItemSelected(long itemID) {
 		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+		MyLog.i("Main_ACTIVITY", "onCreateLoader(); id = " + id);
+		CursorLoader cursorLoader = RSS_ChannelsTable.getAllNewsFeeds(this);
+		return cursorLoader;
+	}
+
+	@Override
+	public void onLoadFinished(Loader<Cursor> loader, Cursor newCursor) {
+		int id = loader.getId();
+		MyLog.i("Main_ACTIVITY", "onLoadFinished(); id = " + id);
+		mNewsFeedsCursorAdapter.swapCursor(newCursor);
+
+	}
+
+	@Override
+	public void onLoaderReset(Loader<Cursor> loader) {
+		int id = loader.getId();
+		MyLog.i("Main_ACTIVITY", "onLoaderReset(); id = " + id);
+		mNewsFeedsCursorAdapter.swapCursor(null);
 
 	}
 

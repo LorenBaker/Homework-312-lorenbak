@@ -343,11 +343,10 @@ public class RSS_ItemsTable {
 		String[] projection = PROJECTION_ALL;
 		String selection = null;
 		String selectionArgs[] = null;
-		// TODO filter getAllItems by channelID
-		/*		if (channelID > 1) {
-					selection = COL_CHANNEL_ID + " = ?";
-					selectionArgs = new String[] { String.valueOf(channelID) };
-				}*/
+		if (channelID > 1) {
+			selection = COL_CHANNEL_ID + " = ?";
+			selectionArgs = new String[] { String.valueOf(channelID) };
+		}
 
 		CursorLoader cursorLoader = null;
 		try {

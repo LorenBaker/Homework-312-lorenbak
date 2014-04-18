@@ -3,6 +3,7 @@ package com.lbconsulting.homework_312_lorenbak.database;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.CursorLoader;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
@@ -15,6 +16,7 @@ public class RSS_ChannelsTable {
 	public static final String TABLE_CHANNELS = "tblChannels";
 	// Required elements
 	public static final String COL_CHANNEL_ID = "_id";
+	public static final String COL_NEWS_FEED_URL = "newsFeedURL";
 	public static final String COL_TITLE = "title";
 	public static final String COL_LINK = "link";
 	public static final String COL_DESCRIPTION = "description";
@@ -38,14 +40,16 @@ public class RSS_ChannelsTable {
 	public static final String COL_WEBMASTER = "webMaster";
 	public static final String COL_LAST_REFRESH_DATE_TIME = "lastDateTimeRefreshed";
 
-	public static final String[] PROJECTION_ALL = { COL_CHANNEL_ID, COL_TITLE, COL_LINK, COL_DESCRIPTION,
-			COL_CATEGORY, COL_CATEGORY_DOMAIN, COL_CLOUD, COL_COPYRIGHT, COL_DOCS, COL_GENERATOR, COL_IMAGE_ID,
-			COL_LANGUAGE, COL_LAST_BUILD_DATE, COL_MANAGING_EDITOR, COL_PUB_DATE, COL_RATING,
+	public static final String[] PROJECTION_ALL = { COL_CHANNEL_ID, COL_NEWS_FEED_URL, COL_TITLE, COL_LINK,
+			COL_DESCRIPTION, COL_CATEGORY, COL_CATEGORY_DOMAIN, COL_CLOUD, COL_COPYRIGHT, COL_DOCS, COL_GENERATOR,
+			COL_IMAGE_ID, COL_LANGUAGE, COL_LAST_BUILD_DATE, COL_MANAGING_EDITOR, COL_PUB_DATE, COL_RATING,
 			COL_SKIP_DAYS_ID, COL_SKIP_HOURS_ID, COL_TEXT_INPUT_ID, COL_TTL, COL_WEBMASTER, COL_LAST_REFRESH_DATE_TIME
 	};
 
 	public static final String[] PROJECTION_REQUIRED_ELEMENTS = { COL_CHANNEL_ID, COL_TITLE, COL_LINK, COL_DESCRIPTION,
 			COL_IMAGE_ID, COL_LAST_REFRESH_DATE_TIME };
+
+	public static final String[] PROJECTION_NEWS_FEED_URLs = { COL_CHANNEL_ID, COL_NEWS_FEED_URL, COL_TITLE };
 
 	public static final String CONTENT_PATH = "channels";
 	public static final String CONTENT_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE + "/" + "vnd.lbconsulting."
@@ -56,12 +60,14 @@ public class RSS_ChannelsTable {
 
 	public static final String SORT_ORDER_TITLE = COL_TITLE + " ASC";
 	public static final String SORT_ORDER_PUB_DATE = COL_PUB_DATE + " ASC";
+	public static final String SORT_ORDER_NEW_FEED_URL = COL_NEWS_FEED_URL + " ASC";
 
 	// Database creation SQL statements
 	private static final String DATATABLE_CREATE = "create table " + TABLE_CHANNELS
 			+ " ("
 			// Required elements
 			+ COL_CHANNEL_ID + " integer primary key autoincrement, "
+			+ COL_NEWS_FEED_URL + " text collate nocase, "
 			+ COL_TITLE + " text collate nocase, "
 			+ COL_LINK + " text collate nocase, "
 			+ COL_DESCRIPTION + " text collate nocase, "
@@ -102,6 +108,37 @@ public class RSS_ChannelsTable {
 	// /////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Create Methods
 	// /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	public static long CreateChannel(Context context, String newsFeedURL, String title) {
+		long newChannelID = -1;
+		Cursor channelCursor = null;
+		if (newsFeedURL != null && !newsFeedURL.isEmpty()) {
+			// check to see if the news feed is already in the database
+			channelCursor = getNewsFeedCursor(context, newsFeedURL);
+			if (channelCursor != null && channelCursor.getCount() > 0) {
+				// the news feed already exists in the database
+				newChannelID = channelCursor.getLong(channelCursor.getColumnIndexOrThrow(COL_CHANNEL_ID));
+				channelCursor.close();
+				return newChannelID;
+			}
+
+			// the news feed is NOT in the database ... so create it.
+			Uri uri = CONTENT_URI;
+			ContentResolver cr = context.getContentResolver();
+			ContentValues cv = new ContentValues();
+			cv.put(COL_NEWS_FEED_URL, newsFeedURL);
+			cv.put(COL_TITLE, title);
+			Uri newChannelUri = cr.insert(uri, cv);
+			if (newChannelUri != null) {
+				newChannelID = Long.parseLong(newChannelUri.getLastPathSegment());
+			}
+		}
+		if (channelCursor != null) {
+			channelCursor.close();
+		}
+		return newChannelID;
+	}
+
 	public static long CreateChannel(Context context, ContentValues channelRequiredContentValues) {
 
 		String channelTitle = channelRequiredContentValues.getAsString("title");
@@ -128,12 +165,6 @@ public class RSS_ChannelsTable {
 				return newChannelID;
 			}
 
-			// the channel does not exist in the database ... so create it
-			/*			ContentValues newFieldValues = new ContentValues();
-						newFieldValues.put(COL_TITLE, channelTitle);
-						newFieldValues.put(COL_DESCRIPTION, channelDescription);
-						newFieldValues.put(COL_LINK, channelLink);*/
-
 			Uri uri = CONTENT_URI;
 			ContentResolver cr = context.getContentResolver();
 			Uri newItemUri = cr.insert(uri, channelRequiredContentValues);
@@ -151,6 +182,58 @@ public class RSS_ChannelsTable {
 	// /////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Read Methods
 	// /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	private static Cursor getNewsFeedCursor(Context context, String newsFeedURL) {
+		Uri uri = CONTENT_URI;
+		String[] projection = PROJECTION_NEWS_FEED_URLs;
+		String selection = COL_NEWS_FEED_URL + " = ?";
+		String selectionArgs[] = new String[] { newsFeedURL };
+		String sortOrder = SORT_ORDER_NEW_FEED_URL;
+
+		ContentResolver cr = context.getContentResolver();
+		Cursor cursor = null;
+		try {
+			cursor = cr.query(uri, projection, selection, selectionArgs, sortOrder);
+		} catch (Exception e) {
+			MyLog.e("RSS_ChannelsTable", "Exception error in getAllNewsFeedsCursor:");
+			e.printStackTrace();
+		}
+		return cursor;
+	}
+
+	public static Cursor getAllNewsFeedsCursor(Context context) {
+		Uri uri = CONTENT_URI;
+		String[] projection = PROJECTION_NEWS_FEED_URLs;
+		String selection = null;
+		String selectionArgs[] = null;
+		String sortOrder = SORT_ORDER_NEW_FEED_URL;
+
+		ContentResolver cr = context.getContentResolver();
+		Cursor cursor = null;
+		try {
+			cursor = cr.query(uri, projection, selection, selectionArgs, sortOrder);
+		} catch (Exception e) {
+			MyLog.e("RSS_ChannelsTable", "Exception error in getAllNewsFeedsCursor:");
+			e.printStackTrace();
+		}
+		return cursor;
+	}
+
+	public static CursorLoader getAllNewsFeeds(Context context) {
+		Uri uri = CONTENT_URI;
+		String[] projection = PROJECTION_NEWS_FEED_URLs;
+		String selection = null;
+		String selectionArgs[] = null;
+		String sortOrder = SORT_ORDER_NEW_FEED_URL;
+		CursorLoader cursorLoader = null;
+		try {
+			cursorLoader = new CursorLoader(context, uri, projection, selection, selectionArgs, sortOrder);
+		} catch (Exception e) {
+			MyLog.e("RSS_ChannelsTable", "Exception error in getAllNewsFeeds:");
+			e.printStackTrace();
+		}
+		return cursorLoader;
+	}
 
 	public static Cursor getChannelAllElements(Context context, long channelID) {
 		Uri uri = Uri.withAppendedPath(CONTENT_URI, String.valueOf(channelID));
@@ -205,22 +288,6 @@ public class RSS_ChannelsTable {
 		}
 		return cursor;
 	}
-
-	/*	public static CursorLoader getAllItems(Context context, String sortOrder) {
-			Uri uri = CONTENT_URI;
-			String[] projection = PROJECTION_ALL;
-			String selection = null;
-			String selectionArgs[] = null;
-
-			CursorLoader cursorLoader = null;
-			try {
-				cursorLoader = new CursorLoader(context, uri, projection, selection, selectionArgs, sortOrder);
-			} catch (Exception e) {
-				MyLog.e("channelsTable", "Exception error in getAllItems:");
-				e.printStackTrace();
-			}
-			return cursorLoader;
-		}*/
 
 	// /////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Update Methods
