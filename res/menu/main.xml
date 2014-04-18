@@ -1,0 +1,25 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	tools:context="com.example.homework_312_lorenbak.MainActivity" >
+
+	<item
+		android:id="@+id/action_refresh"
+		android:icon="@drawable/ic_action_refresh"
+		android:orderInCategory="100"
+		android:showAsAction="ifRoom"
+		android:title="@string/action_refresh_text"/>
+	<item
+		android:id="@+id/action_acceptItems"
+		android:icon="@drawable/ic_action_accept"
+		android:orderInCategory="110"
+		android:showAsAction="ifRoom"
+		android:title="@string/action_acceptItems_text"/>
+	<item
+		android:id="@+id/action_discardItems"
+		android:icon="@drawable/ic_action_discard"
+		android:orderInCategory="120"
+		android:showAsAction="ifRoom"
+		android:title="@string/action_discardItems_text"/>
+
+</menu>
