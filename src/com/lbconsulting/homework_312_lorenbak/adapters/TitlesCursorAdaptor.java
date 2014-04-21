@@ -81,7 +81,7 @@ public class TitlesCursorAdaptor extends CursorAdapter {
 	@Override
 	public View newView(Context context, Cursor cursor, ViewGroup parent) {
 		LayoutInflater inflater = LayoutInflater.from(context);
-		View view = inflater.inflate(R.layout.title, parent, false);
+		View view = inflater.inflate(R.layout.row_title, parent, false);
 		return view;
 	}
 

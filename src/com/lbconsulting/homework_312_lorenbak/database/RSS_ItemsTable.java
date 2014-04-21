@@ -123,6 +123,8 @@ public class RSS_ItemsTable {
 			COL_PUB_DATE, COL_SOURCE, COL_SOURCE_URL, COL_IMAGE_ID, COL_ITEM_UPDATED, COL_ITEM_SELECTED, COL_ITEM_READ
 	};
 
+	public static final String[] PROJECTION_ITEM_ID = { COL_ITEM_ID };
+
 	public static final String CONTENT_PATH = "items";
 	public static final String CONTENT_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE + "/" + "vnd.lbconsulting."
 			+ CONTENT_PATH;
@@ -356,6 +358,42 @@ public class RSS_ItemsTable {
 			e.printStackTrace();
 		}
 		return cursorLoader;
+	}
+
+	public static Cursor getAllItemsIDCursor(Context context, long channelID, String sortOrder) {
+		Uri uri = CONTENT_URI;
+		String[] projection = PROJECTION_ITEM_ID;
+		String selection = null;
+		String selectionArgs[] = null;
+		if (channelID > 1) {
+			selection = COL_CHANNEL_ID + " = ?";
+			selectionArgs = new String[] { String.valueOf(channelID) };
+		}
+
+		Cursor cursor = null;
+		ContentResolver cr = context.getContentResolver();
+		;
+		try {
+			cursor = cr.query(uri, projection, selection, selectionArgs, sortOrder);
+		} catch (Exception e) {
+			MyLog.e("TABLE_ITEMS", "Exception error in getAllItemsCursor:");
+			e.printStackTrace();
+		}
+
+		return cursor;
+	}
+
+	public static long getChannelID(Context context, long itemID) {
+		long channelID = -1;
+		Cursor cursor = getItem(context, itemID);
+		if (cursor != null && cursor.getCount() > 0) {
+			cursor.moveToFirst();
+			channelID = cursor.getLong(cursor.getColumnIndexOrThrow(COL_CHANNEL_ID));
+		}
+		if (cursor != null) {
+			cursor.close();
+		}
+		return channelID;
 	}
 
 	// /////////////////////////////////////////////////////////////////////////////////////////////////////////

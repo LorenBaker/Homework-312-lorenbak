@@ -7,6 +7,7 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import android.app.LoaderManager;
 import android.content.CursorLoader;
+import android.content.Intent;
 import android.content.Loader;
 import android.content.res.AssetManager;
 import android.database.Cursor;
@@ -24,17 +25,15 @@ import com.lbconsulting.homework_312_lorenbak.RSSreader.RSS_Parser;
 import com.lbconsulting.homework_312_lorenbak.adapters.NewsFeedsSpinnerCursorAdapter;
 import com.lbconsulting.homework_312_lorenbak.database.RSS_ChannelsTable;
 import com.lbconsulting.homework_312_lorenbak.fragments.TitlesFragment;
-import com.lbconsulting.homework_312_lorenbak.fragments.TitlesFragment.OnTitleSelected;
+import com.lbconsulting.homework_312_lorenbak.fragments.TitlesFragment.OnArticleSelected;
 
-public class MainActivity extends ActionBarActivity implements ActionBar.OnNavigationListener, OnTitleSelected,
+public class MainActivity extends ActionBarActivity implements ActionBar.OnNavigationListener, OnArticleSelected,
 		SensorEventListener, LoaderManager.LoaderCallbacks<Cursor> {
 
-	/**
-	 * The serialization (saved instance state) Bundle key representing the
-	 * current dropdown position.
-	 */
 	private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
 	private long mActiveChannelID = 1;
+	private int mActivePosition = -1;
+	private int mChannelSpinnerPosition = 0;
 
 	private LoaderManager mLoaderManager = null;
 	private LoaderManager.LoaderCallbacks<Cursor> mNewsFeedsCallbacks;
@@ -42,9 +41,8 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 	private static final int NEWS_FEEDS_LOADER_ID = 2;
 
 	// private String DATA_FILENAME = "sample-rss-2.xml";
-	private String DATA_FILENAME = "GoogleNews.download.xml";
-
-	// private String DATA_FILENAME = "Yahoo.download.xml";
+	// private String DATA_FILENAME = "GoogleNews.download.xml";
+	private String DATA_FILENAME = "Yahoo.download.xml";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -142,7 +140,6 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 
 		try {
 			input = assetManager.open(DATA_FILENAME);
-			/*RSS_Channel channelParseResult = RSS_Parser.parse(input);*/
 			RSS_Parser.parse(this, input);
 			if (input != null) {
 				input.close();
@@ -171,53 +168,16 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 	}
 
 	@Override
-	public boolean onNavigationItemSelected(int position, long id) {
+	public boolean onNavigationItemSelected(int position, long channelID) {
 		// When the given dropdown item is selected, show its contents in the
 		// container view.
-		mActiveChannelID = id;
+		mActiveChannelID = channelID;
+		mChannelSpinnerPosition = position;
 		getSupportFragmentManager().beginTransaction()
 				.replace(R.id.container, TitlesFragment.newInstance(mActiveChannelID))
 				.commit();
 		return true;
 	}
-
-	/**
-	 * A placeholder fragment containing a simple view.
-	 */
-	/*	public static class PlaceholderFragment extends Fragment {
-
-			*//**
-		* The fragment argument representing the section number for this
-		* fragment.
-		*/
-	/*
-	private static final String ARG_SECTION_NUMBER = "section_number";
-
-	*//**
-		* Returns a new instance of this fragment for the given section
-		* number.
-		*/
-	/*
-	public static PlaceholderFragment newInstance(int sectionNumber) {
-	PlaceholderFragment fragment = new PlaceholderFragment();
-	Bundle args = new Bundle();
-	args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-	fragment.setArguments(args);
-	return fragment;
-	}
-
-	public PlaceholderFragment() {
-	}
-
-	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-		Bundle savedInstanceState) {
-	View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-	TextView textView = (TextView) rootView.findViewById(R.id.section_label);
-	textView.setText(Integer.toString(getArguments().getInt(ARG_SECTION_NUMBER)));
-	return rootView;
-	}
-	}*/
 
 	@Override
 	public void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -232,9 +192,14 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 	}
 
 	@Override
-	public void OnItemSelected(long itemID) {
-		// TODO Auto-generated method stub
-
+	public void onArticleSelected(int position, long articleID) {
+		// start the NewsArticleActivity
+		mActivePosition = position;
+		Intent newsArticleActivityIntent = new Intent(this, NewsArticleActivity.class);
+		newsArticleActivityIntent.putExtra("ActiveArticleID", articleID);
+		newsArticleActivityIntent.putExtra("ActiveChannelID", mActiveChannelID);
+		newsArticleActivityIntent.putExtra("ActivePosition", mActivePosition);
+		startActivity(newsArticleActivityIntent);
 	}
 
 	@Override

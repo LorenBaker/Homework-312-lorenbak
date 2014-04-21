@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:orientation="vertical" >
+
+	<LinearLayout
+		android:id="@+id/fragNewsArticleLinearLayout"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:layout_marginLeft="3dp"
+		android:layout_marginRight="3dp"
+		android:orientation="vertical"
+		android:visibility="visible" >
+
+		<TextView
+			android:id="@+id/tvArticleTitle"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:hint="Article Title"
+			android:textSize="15sp"
+			android:textStyle="bold" >
+		</TextView>
+
+		<RelativeLayout
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content" >
+
+			<TextView
+				android:id="@+id/tvArticleSource"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_alignParentLeft="true"
+				android:layout_alignParentTop="true"
+				android:hint="Article Source"
+				android:textColor="@color/black"
+				android:textSize="13sp"
+				android:textStyle="bold" >
+			</TextView>
+
+			<TextView
+				android:id="@+id/tvArticleAuthor"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_toRightOf="@id/tvArticleSource"
+				android:hint="Article Author"
+				android:paddingLeft="4dp"
+				android:textColor="@color/black"
+				android:textSize="13sp"
+				android:textStyle="bold" >
+			</TextView>
+
+			<TextView
+				android:id="@+id/tvArticlePubDate"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_below="@id/tvArticleSource"
+				android:hint="Article Pub Date"
+				android:textColor="@color/redDark"
+				android:textSize="13sp"
+				android:textStyle="italic" >
+			</TextView>
+		</RelativeLayout>
+
+		<LinearLayout
+			android:id="@+id/articleImageLinearLayout"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:background="@drawable/rectangle_black_stroke"
+			android:orientation="horizontal" >
+
+			<RelativeLayout
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_margin="5dp" >
+
+				<ImageView
+					android:id="@+id/ivArticleImage"
+					android:layout_width="110dp"
+					android:layout_height="75dp"
+					android:layout_alignParentLeft="true"
+					android:background="@drawable/rectangle_black_stroke"
+					android:contentDescription="News Article Image" />
+
+				<TextView
+					android:id="@+id/tvArticleImageTitle"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:layout_below="@id/ivArticleImage"
+					android:hint="Article Image Title"
+					android:textSize="13sp"
+					android:textStyle="normal" >
+				</TextView>
+			</RelativeLayout>
+
+			<TextView
+				android:id="@+id/tvArticleImageDescription"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_margin="5dp"
+				android:layout_weight="1"
+				android:hint="Article Image Description"
+				android:textSize="13sp"
+				android:textStyle="normal" >
+			</TextView>
+		</LinearLayout>
+
+		<ScrollView
+			android:layout_width="match_parent"
+			android:layout_height="0dp"
+			android:layout_margin="5dp"
+			android:layout_weight="1" >
+
+			<TextView
+				android:id="@+id/tvArticleDescription "
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:hint="@string/tvContent_hint"
+				android:textSize="15sp"
+				android:textStyle="normal" >
+			</TextView>
+		</ScrollView>
+
+		<Button
+			android:id="@+id/btnShowArticleWebsite "
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:gravity="center"
+			android:text="More ..." />
+	</LinearLayout>
+
+	<TextView
+		android:id="@+id/tvEmptyNewsArticle"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:gravity="center"
+		android:text="@string/tvEmptyFragDetails_text"
+		android:textSize="28sp"
+		android:textStyle="bold|italic"
+		android:visibility="gone" >
+	</TextView>
+
+</LinearLayout>

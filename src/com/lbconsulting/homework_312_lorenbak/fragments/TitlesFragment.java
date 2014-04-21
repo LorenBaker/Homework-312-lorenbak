@@ -29,12 +29,12 @@ import com.lbconsulting.homework_312_lorenbak.database.RSS_ItemsTable;
 
 public class TitlesFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
-	OnTitleSelected mOnTitleSelectedCallback;
+	OnArticleSelected mOnArticleSelectedCallback;
 
 	// Container Activity must implement this interface
-	public interface OnTitleSelected {
+	public interface OnArticleSelected {
 
-		public void OnItemSelected(long itemID);
+		public void onArticleSelected(int position, long articleID);
 	}
 
 	private TitlesCursorAdaptor mItemsCursorAdaptor;
@@ -77,7 +77,7 @@ public class TitlesFragment extends Fragment implements LoaderManager.LoaderCall
 		// This makes sure that the container activity has implemented
 		// the callback interface. If not, it throws an exception
 		try {
-			mOnTitleSelectedCallback = (OnTitleSelected) activity;
+			mOnArticleSelectedCallback = (OnArticleSelected) activity;
 		} catch (ClassCastException e) {
 			throw new ClassCastException(activity.toString() + " must implement OnItemSelectedCallback");
 		}
@@ -134,7 +134,8 @@ public class TitlesFragment extends Fragment implements LoaderManager.LoaderCall
 
 						case R.id.item_delete:
 							nr = 0;
-							mOnTitleSelectedCallback.OnItemSelected(0);
+							// TODO figure out what position and article should be displayed after deletion
+							mOnArticleSelectedCallback.onArticleSelected(0, 0);
 							RSS_ItemsTable.DeleteAllSelectedItems(getActivity());
 							mode.finish();
 							break;
@@ -162,8 +163,8 @@ public class TitlesFragment extends Fragment implements LoaderManager.LoaderCall
 			mTitlesListView.setOnItemClickListener(new OnItemClickListener() {
 
 				@Override
-				public void onItemClick(AdapterView<?> parent, View v, int position, long itemID) {
-					mOnTitleSelectedCallback.OnItemSelected(itemID);
+				public void onItemClick(AdapterView<?> parent, View v, int position, long articleID) {
+					mOnArticleSelectedCallback.onArticleSelected(position, articleID);
 				}
 			});
 
