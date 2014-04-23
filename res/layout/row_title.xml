@@ -27,7 +27,7 @@
 			android:id="@+id/tvPubDate"
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
-			android:layout_margin="6dp"
+			android:layout_marginLeft="6dp"
 			android:hint="Pub Date"
 			android:textColor="@color/redDark"
 			android:textSize="13sp"
@@ -38,8 +38,9 @@
 			android:id="@+id/tvTitle"
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
-			android:layout_margin="6dp"
+			android:layout_marginLeft="6dp"
 			android:hint="@string/tvTitle_hint"
+			android:paddingBottom="6dp"
 			android:textSize="17sp" >
 		</TextView>
 	</LinearLayout>

@@ -8,8 +8,7 @@
 		android:id="@+id/fragNewsArticleLinearLayout"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:layout_marginLeft="3dp"
-		android:layout_marginRight="3dp"
+		android:layout_margin="6dp"
 		android:orientation="vertical"
 		android:visibility="visible" >
 

@@ -1,5 +1,7 @@
 package com.lbconsulting.homework_312_lorenbak.database;
 
+import java.util.Calendar;
+
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -372,7 +374,6 @@ public class RSS_ItemsTable {
 
 		Cursor cursor = null;
 		ContentResolver cr = context.getContentResolver();
-		;
 		try {
 			cursor = cr.query(uri, projection, selection, selectionArgs, sortOrder);
 		} catch (Exception e) {
@@ -394,6 +395,39 @@ public class RSS_ItemsTable {
 			cursor.close();
 		}
 		return channelID;
+	}
+
+	public static int getNumberOfSelectedItems(Context context, long channelID) {
+		int numberOfSelectedItems = 0;
+
+		Uri uri = CONTENT_URI;
+		String[] projection = PROJECTION_ITEM_ID;
+		String selection = null;
+		String selectionArgs[] = null;
+		String sortOrder = null;
+		if (channelID > 1) {
+			selection = COL_CHANNEL_ID + " = ? AND " + COL_ITEM_SELECTED + " = ?";
+			selectionArgs = new String[] { String.valueOf(channelID), String.valueOf(1) };
+		} else {
+			selection = COL_ITEM_SELECTED + " = ?";
+			selectionArgs = new String[] { String.valueOf(1) };
+		}
+
+		Cursor cursor = null;
+		ContentResolver cr = context.getContentResolver();
+		try {
+			cursor = cr.query(uri, projection, selection, selectionArgs, sortOrder);
+		} catch (Exception e) {
+			MyLog.e("TABLE_ITEMS", "Exception error in getAllItemsCursor:");
+			e.printStackTrace();
+		}
+
+		if (cursor != null) {
+			numberOfSelectedItems = cursor.getCount();
+			cursor.close();
+		}
+
+		return numberOfSelectedItems;
 	}
 
 	// /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -440,12 +474,79 @@ public class RSS_ItemsTable {
 
 	}
 
+	public static int SelectItemsOlderThan(Context context, long channelID, long numberOfHours) {
+		int numberOfUpdatedRecords = -1;
+
+		Calendar rightNow = Calendar.getInstance();
+		long age = numberOfHours * 60 * 60 * 1000;
+		long selectionTimeMills = rightNow.getTimeInMillis() - age;
+
+		Uri uri = CONTENT_URI;
+		String selection = null;
+		String selectionArgs[] = null;
+		if (channelID > 1) {
+			selection = COL_CHANNEL_ID + " = ? AND " + COL_PUB_DATE + " < ?";
+			selectionArgs = new String[] { String.valueOf(channelID), String.valueOf(selectionTimeMills) };
+		} else {
+			selection = COL_PUB_DATE + " < ?";
+			selectionArgs = new String[] { String.valueOf(selectionTimeMills) };
+		}
+		ContentValues newFieldValues = new ContentValues();
+		newFieldValues.put(COL_ITEM_SELECTED, 1);
+
+		ContentResolver cr = context.getContentResolver();
+		numberOfUpdatedRecords = cr.update(uri, newFieldValues, selection, selectionArgs);
+
+		return numberOfUpdatedRecords;
+	}
+
+	public static int SelectAllItems(Context context, long channelID) {
+		int numberOfUpdatedRecords = -1;
+		Uri uri = CONTENT_URI;
+		String selection = null;
+		String selectionArgs[] = null;
+		if (channelID > 1) {
+			selection = COL_CHANNEL_ID + " = ?";
+			selectionArgs = new String[] { String.valueOf(channelID) };
+		}
+
+		ContentValues newFieldValues = new ContentValues();
+		newFieldValues.put(COL_ITEM_SELECTED, 1);
+
+		ContentResolver cr = context.getContentResolver();
+		numberOfUpdatedRecords = cr.update(uri, newFieldValues, selection, selectionArgs);
+		return numberOfUpdatedRecords;
+	}
+
+	public static int SelectAllReadItems(Context context, long channelID) {
+		int numberOfUpdatedRecords = -1;
+		Uri uri = CONTENT_URI;
+		String selection = null;
+		String selectionArgs[] = null;
+		if (channelID > 1) {
+			selection = COL_CHANNEL_ID + " = ? AND " + COL_ITEM_READ + " = ?";
+			selectionArgs = new String[] { String.valueOf(channelID), String.valueOf(1) };
+		} else {
+			selection = COL_ITEM_READ + " = ?";
+			selectionArgs = new String[] { String.valueOf(1) };
+		}
+
+		ContentValues newFieldValues = new ContentValues();
+		newFieldValues.put(COL_ITEM_SELECTED, 1);
+
+		ContentResolver cr = context.getContentResolver();
+		numberOfUpdatedRecords = cr.update(uri, newFieldValues, selection, selectionArgs);
+		return numberOfUpdatedRecords;
+	}
+
 	public static int DeselectAllSelectedItems(Context context) {
 		int numberOfUpdatedRecords = -1;
 
 		Uri uri = CONTENT_URI;
-		String selection = COL_ITEM_SELECTED + " = ?";
-		String[] selectionArgs = new String[] { String.valueOf(1) };
+		String selection = null;
+		String selectionArgs[] = null;
+		selection = COL_ITEM_SELECTED + " = ?";
+		selectionArgs = new String[] { String.valueOf(1) };
 
 		ContentValues newFieldValues = new ContentValues();
 		newFieldValues.put(COL_ITEM_SELECTED, 0);
@@ -484,12 +585,20 @@ public class RSS_ItemsTable {
 		return numberOfDeletedRecords;
 	}
 
-	public static int DeleteAllSelectedItems(Context context) {
+	public static int DeleteAllSelectedItems(Context context, long channelID) {
 		int numberOfDeletedRecords = -1;
 
 		Uri uri = CONTENT_URI;
-		String where = COL_ITEM_SELECTED + " = ?";
-		String selectionArgs[] = new String[] { String.valueOf(1) };
+		String where = null;
+		String selectionArgs[] = null;
+		if (channelID > 1) {
+			where = COL_ITEM_SELECTED + " = ? AND " + COL_CHANNEL_ID + " = ?";
+			selectionArgs = new String[] { String.valueOf(1), String.valueOf(channelID) };
+		} else {
+			where = COL_ITEM_SELECTED + " = ?";
+			selectionArgs = new String[] { String.valueOf(1) };
+		}
+
 		ContentResolver cr = context.getContentResolver();
 		numberOfDeletedRecords = cr.delete(uri, where, selectionArgs);
 

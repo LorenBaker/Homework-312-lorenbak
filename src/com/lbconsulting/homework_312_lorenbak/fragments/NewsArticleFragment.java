@@ -259,8 +259,6 @@ public class NewsArticleFragment extends Fragment {
 						}
 					});
 				}
-
-				RSS_ItemsTable.setItemAsRead(getActivity(), mActiveArticleID); // set Article as read.
 			}
 
 			if (articleCursor != null) {

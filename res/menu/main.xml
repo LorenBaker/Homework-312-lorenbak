@@ -9,17 +9,5 @@
 		android:orderInCategory="100"
 		android:showAsAction="ifRoom"
 		android:title="@string/action_refresh_text"/>
-	<item
-		android:id="@+id/action_acceptItems"
-		android:icon="@drawable/ic_action_accept"
-		android:orderInCategory="110"
-		android:showAsAction="ifRoom"
-		android:title="@string/action_acceptItems_text"/>
-	<item
-		android:id="@+id/action_discardItems"
-		android:icon="@drawable/ic_action_discard"
-		android:orderInCategory="120"
-		android:showAsAction="ifRoom"
-		android:title="@string/action_discardItems_text"/>
 
 </menu>

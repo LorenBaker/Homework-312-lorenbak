@@ -4,9 +4,43 @@
 	<item
 		android:id="@+id/item_delete"
 		android:icon="@drawable/ic_action_discard"
-		android:showAsAction="ifRoom|withText"
-		android:title="Delete"
-		android:titleCondensed="Delete">
+		android:showAsAction="ifRoom"
+		android:title="Delete selected articles">
+	</item>
+	<item
+		android:id="@+id/select_all_read_articles"
+		android:showAsAction="never"
+		android:title="Select all read articles">
+	</item>
+	<item
+		android:id="@+id/select_all_articles"
+		android:showAsAction="never"
+		android:title="Select all articles">
+	</item>
+	<item
+		android:id="@+id/deselect_all_articles"
+		android:showAsAction="never"
+		android:title="Deselect all articles">
+	</item>
+	<item
+		android:id="@+id/select_articles_4hours"
+		android:showAsAction="never"
+		android:title="Select articles over 4 hours old">
+	</item>
+	<item
+		android:id="@+id/select_articles_1day"
+		android:showAsAction="never"
+		android:title="Select articles over 1 day old">
+	</item>
+	<item
+		android:id="@+id/select_articles_2days"
+		android:showAsAction="never"
+		android:title="Select articles over 2 days old">
+	</item>
+	<item
+		android:id="@+id/select_articles_1week"
+		android:showAsAction="never"
+		android:title="Select articles over 1 week old">
 	</item>
 
 </menu>

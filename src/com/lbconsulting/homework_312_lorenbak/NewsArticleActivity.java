@@ -8,6 +8,7 @@ import android.support.v4.view.ViewPager.OnPageChangeListener;
 import android.view.View;
 
 import com.lbconsulting.homework_312_lorenbak.adapters.NewsArticlesPagerAdapter;
+import com.lbconsulting.homework_312_lorenbak.database.RSS_ItemsTable;
 
 public class NewsArticleActivity extends FragmentActivity {
 
@@ -26,11 +27,6 @@ public class NewsArticleActivity extends FragmentActivity {
 		super.onCreate(savedInstanceState);
 		MyLog.i("NewsArticle_ACTIVITY", "onCreate()");
 		setContentView(R.layout.activity_news_articles_pager);
-
-		/*		news_article_pager = this.findViewById(R.id.news_article_pager);
-				if (news_article_pager == null) {
-					finish();
-				}*/
 
 		Bundle args = getIntent().getExtras();
 		mActiveArticleID = args.getLong("ActiveArticleID", -1);
@@ -61,39 +57,12 @@ public class NewsArticleActivity extends FragmentActivity {
 			public void onPageSelected(int position) {
 				MyLog.d("NewsArticle_ACTIVITY", "onPageSelected() - position = " + position);
 				mActivePosition = position;
-				// A list page has been selected
-				// setActiveArticleID(position);
+				mActiveArticleID = mNewsArticlesPagerAdapter.getNewsArticleID(position);
+				RSS_ItemsTable.setItemAsRead(NewsArticleActivity.this, mActiveArticleID); // set Article as read.
 			}
 		});
 
-		// LoadNewsArticleFragment();
-
 	}
-
-	/*	private void LoadNewsArticleFragment() {
-			mNewsArticleFragment = (NewsArticleFragment) this.getSupportFragmentManager()
-					.findFragmentByTag("NewsArticleFragment");
-			if (mNewsArticleFragment == null) {
-				// create NewsArticleFragment
-				mNewsArticleFragment = NewsArticleFragment.newInstance(this, mActiveArticleID);
-				MyLog.i("NewsArticle_ACTIVITY", "LoadNewsArticleFragment():NewInstance: articleID=" + mActiveArticleID);
-
-				// add the fragment to the Activity
-				this.getSupportFragmentManager().beginTransaction()
-						.add(R.id.frag_news_article_placeholder, mNewsArticleFragment, "NewsArticleFragment")
-						.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-						.commit();
-			} else {
-				// mNewsArticleFragment exists ... so replace it
-				mNewsArticleFragment = NewsArticleFragment.newInstance(this, mActiveArticleID);
-				// add the fragment to the Activity
-				this.getSupportFragmentManager().beginTransaction()
-						.replace(R.id.frag_news_article_placeholder, mNewsArticleFragment, "NewsArticleFragment")
-						.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-						.commit();
-			}
-
-		}*/
 
 	@Override
 	protected void onStart() {

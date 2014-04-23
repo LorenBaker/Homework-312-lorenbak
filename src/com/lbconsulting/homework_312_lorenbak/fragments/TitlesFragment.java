@@ -1,6 +1,8 @@
 package com.lbconsulting.homework_312_lorenbak.fragments;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -47,16 +49,18 @@ public class TitlesFragment extends Fragment implements LoaderManager.LoaderCall
 	private LoaderManager.LoaderCallbacks<Cursor> mTitlesFragmentCallbacks;
 
 	private long mActiveChannelID = 1;
+	private int mActivePosition = 0;
 
 	public TitlesFragment() {
 		// Empty constructor
 	}
 
-	public static TitlesFragment newInstance(long activeChannelID) {
+	public static TitlesFragment newInstance(long activeChannelID, int activePosition) {
 		TitlesFragment f = new TitlesFragment();
 		// Supply activeChannelID input as an argument.
 		Bundle args = new Bundle();
 		args.putLong("activeChannelID", activeChannelID);
+		args.putInt("activePosition", activePosition);
 		f.setArguments(args);
 		return f;
 	}
@@ -89,10 +93,13 @@ public class TitlesFragment extends Fragment implements LoaderManager.LoaderCall
 
 		if (savedInstanceState != null && savedInstanceState.containsKey("activeChannelID")) {
 			mActiveChannelID = savedInstanceState.getLong("activeChannelID", 1);
+			mActivePosition = savedInstanceState.getInt("activePosition", 0);
 		} else {
 			Bundle bundle = getArguments();
-			if (bundle != null)
+			if (bundle != null) {
 				mActiveChannelID = bundle.getLong("activeChannelID", 1);
+				mActivePosition = bundle.getInt("activePosition", 0);
+			}
 		}
 
 		View view = inflater.inflate(R.layout.frag_titles_list, container, false);
@@ -133,27 +140,56 @@ public class TitlesFragment extends Fragment implements LoaderManager.LoaderCall
 					switch (item.getItemId()) {
 
 						case R.id.item_delete:
-							nr = 0;
-							// TODO figure out what position and article should be displayed after deletion
-							mOnArticleSelectedCallback.onArticleSelected(0, 0);
-							RSS_ItemsTable.DeleteAllSelectedItems(getActivity());
+							RSS_ItemsTable.DeleteAllSelectedItems(getActivity(), mActiveChannelID);
 							mode.finish();
+							break;
+
+						case R.id.select_all_read_articles:
+							RSS_ItemsTable.SelectAllReadItems(getActivity(), mActiveChannelID);
+							break;
+
+						case R.id.select_all_articles:
+							RSS_ItemsTable.SelectAllItems(getActivity(), mActiveChannelID);
+							break;
+
+						case R.id.deselect_all_articles:
+							RSS_ItemsTable.DeselectAllSelectedItems(getActivity());
+							break;
+
+						case R.id.select_articles_4hours:
+							RSS_ItemsTable.SelectItemsOlderThan(getActivity(), mActiveChannelID, 4);
+							break;
+
+						case R.id.select_articles_1day:
+							RSS_ItemsTable.SelectItemsOlderThan(getActivity(), mActiveChannelID, 24);
+							break;
+
+						case R.id.select_articles_2days:
+							RSS_ItemsTable.SelectItemsOlderThan(getActivity(), mActiveChannelID, 48);
+							break;
+
+						case R.id.select_articles_1week:
+							RSS_ItemsTable.SelectItemsOlderThan(getActivity(), mActiveChannelID, 7 * 24);
 							break;
 
 						default:
 							break;
 					}
+					nr = RSS_ItemsTable.getNumberOfSelectedItems(getActivity(), mActiveChannelID);
+					mode.setTitle(nr + " selected");
 					return false;
 				}
 
 				@Override
-				public void onItemCheckedStateChanged(ActionMode mode, int position, long id, boolean checked) {
-					if (checked) {
+				public void onItemCheckedStateChanged(ActionMode mode, int position, long itemID, boolean checked) {
+					// toggle the item's selected state
+					boolean isSelected = !RSS_ItemsTable.isItemSelected(getActivity(), itemID);
+					if (isSelected) {
 						nr++;
 					} else {
 						nr--;
 					}
-					RSS_ItemsTable.setItemSelection(getActivity(), id, checked);
+					RSS_ItemsTable.setItemSelection(getActivity(), itemID, isSelected);
 					mode.setTitle(nr + " selected");
 
 				}
@@ -224,10 +260,10 @@ public class TitlesFragment extends Fragment implements LoaderManager.LoaderCall
 	@Override
 	public void onResume() {
 		MyLog.i("TitlesFragment", "onResume()");
-		Bundle bundle = this.getArguments();
-		if (bundle != null) {
-			mActiveChannelID = bundle.getLong("activeChannelID", 1);
-		}
+		SharedPreferences storedStates = getActivity().getSharedPreferences("HW312", Context.MODE_PRIVATE);
+		mActiveChannelID = storedStates.getLong("ActiveChannelID", -1);
+		mActivePosition = storedStates.getInt("ActivePosition", -1);
+
 		super.onResume();
 	}
 
@@ -256,9 +292,11 @@ public class TitlesFragment extends Fragment implements LoaderManager.LoaderCall
 		int id = loader.getId();
 		MyLog.i("TitlesFragment", "onLoadFinished: LoaderID = " + id);
 		mItemsCursorAdaptor.swapCursor(newCursor);
+
 		if (newCursor != null && newCursor.getCount() > 0) {
 			mTitlesListView.setVisibility(View.VISIBLE);
 			tvEmptyFragTitles.setVisibility(View.GONE);
+			mTitlesListView.setSelection(mActivePosition);
 		} else {
 			mTitlesListView.setVisibility(View.GONE);
 			tvEmptyFragTitles.setVisibility(View.VISIBLE);

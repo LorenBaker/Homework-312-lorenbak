@@ -14,9 +14,6 @@ import android.widget.TextView;
 
 import com.lbconsulting.homework_312_lorenbak.MyLog;
 import com.lbconsulting.homework_312_lorenbak.R;
-import com.lbconsulting.homework_312_lorenbak.R.color;
-import com.lbconsulting.homework_312_lorenbak.R.id;
-import com.lbconsulting.homework_312_lorenbak.R.layout;
 import com.lbconsulting.homework_312_lorenbak.database.RSS_ItemsTable;
 
 public class TitlesCursorAdaptor extends CursorAdapter {
@@ -65,7 +62,7 @@ public class TitlesCursorAdaptor extends CursorAdapter {
 			int isArticleRead = cursor.getInt(cursor.getColumnIndexOrThrow(RSS_ItemsTable.COL_ITEM_READ));
 
 			if (isArticleRead == 1) {
-				view.setBackgroundColor(context.getResources().getColor(R.color.greyLight1));
+				view.setBackgroundColor(context.getResources().getColor(R.color.greyLight2));
 
 			} else {
 				view.setBackgroundColor(context.getResources().getColor(android.R.color.background_light));

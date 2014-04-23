@@ -34,7 +34,7 @@ public class NewsArticlesPagerAdapter extends FragmentStatePagerAdapter {
 
 	@Override
 	public int getCount() {
-		MyLog.d("NewArticlesPagerAdapter", "getCount() - count=" + mCount);
+		// MyLog.d("NewArticlesPagerAdapter", "getCount() - count=" + mCount);
 		return mCount;
 	}
 
@@ -49,7 +49,7 @@ public class NewsArticlesPagerAdapter extends FragmentStatePagerAdapter {
 		return mAllNewsArticlesCursor;
 	}
 
-	private long getNewsArticleID(int position) {
+	public long getNewsArticleID(int position) {
 		long newsArticleID = -1;
 		try {
 			mAllNewsArticlesCursor.moveToPosition(position);

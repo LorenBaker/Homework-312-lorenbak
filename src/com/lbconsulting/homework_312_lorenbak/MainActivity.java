@@ -1,7 +1,13 @@
 package com.lbconsulting.homework_312_lorenbak;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -9,7 +15,6 @@ import android.app.LoaderManager;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
-import android.content.res.AssetManager;
 import android.database.Cursor;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -19,7 +24,6 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import com.lbconsulting.homework_312_lorenbak.RSSreader.RSS_Parser;
 import com.lbconsulting.homework_312_lorenbak.adapters.NewsFeedsSpinnerCursorAdapter;
@@ -32,8 +36,9 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 
 	private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
 	private long mActiveChannelID = 1;
+	private long mActiveArticleID = -1;
 	private int mActivePosition = -1;
-	private int mChannelSpinnerPosition = 0;
+	// private int mChannelSpinnerPosition = 0;
 
 	private LoaderManager mLoaderManager = null;
 	private LoaderManager.LoaderCallbacks<Cursor> mNewsFeedsCallbacks;
@@ -47,6 +52,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		MyLog.i("Main_ACTIVITY", "onCreate()");
 		setContentView(R.layout.activity_main);
 
 		// verify that news feeds exist ... if not create some.
@@ -86,16 +92,33 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 
 	@Override
 	public void onRestoreInstanceState(Bundle savedInstanceState) {
+		MyLog.i("Main_ACTIVITY", "onRestoreInstanceState()");
 		// Restore the previously serialized current dropdown position.
 		if (savedInstanceState.containsKey(STATE_SELECTED_NAVIGATION_ITEM)) {
 			getSupportActionBar().setSelectedNavigationItem(savedInstanceState.getInt(STATE_SELECTED_NAVIGATION_ITEM));
+		}
+
+		if (savedInstanceState.containsKey("ActiveArticleID")) {
+			mActiveArticleID = savedInstanceState.getLong("ActiveArticleID");
+		}
+
+		if (savedInstanceState.containsKey("ActiveChannelID")) {
+			mActiveChannelID = savedInstanceState.getLong("ActiveChannelID");
+		}
+
+		if (savedInstanceState.containsKey("ActivePosition")) {
+			mActivePosition = savedInstanceState.getInt("ActivePosition");
 		}
 	}
 
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
+		MyLog.i("Main_ACTIVITY", "onSaveInstanceState()");
 		// Serialize the current dropdown position.
 		outState.putInt(STATE_SELECTED_NAVIGATION_ITEM, getSupportActionBar().getSelectedNavigationIndex());
+		outState.putLong("ActiveArticleID", mActiveArticleID);
+		outState.putLong("ActiveChannelID", mActiveChannelID);
+		outState.putInt("ActivePosition", mActivePosition);
 	}
 
 	@Override
@@ -117,64 +140,119 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 				RefreshItems();
 				return true;
 
-			case R.id.action_discardItems:
-				Toast.makeText(this, "\"" + item.getTitle() + "\"" + " is under construction.",
-						Toast.LENGTH_SHORT).show();
-				DiscardItems();
-				return true;
-
-			case R.id.action_acceptItems:
-				Toast.makeText(this, "\"" + item.getTitle() + "\"" + " is under construction.",
-						Toast.LENGTH_SHORT).show();
-				AcceptItems();
-				return true;
-
 			default:
 				return super.onOptionsItemSelected(item);
 		}
 	}
 
+	@Override
+	protected void onPause() {
+		MyLog.i("Main_ACTIVITY", "onPause()");
+		super.onPause();
+	}
+
+	@Override
+	protected void onResume() {
+		MyLog.i("Main_ACTIVITY", "onResume()");
+		/*		SharedPreferences storedStates = getSharedPreferences("HW312", MODE_PRIVATE);
+				mActiveArticleID = storedStates.getLong("ActiveArticleID", -1);
+				mActiveChannelID = storedStates.getLong("ActiveChannelID", -1);
+				mActivePosition = storedStates.getInt("ActivePosition", -1);
+
+				if (mActivePosition > -1) {
+					mPager.setCurrentItem(mActivePosition);
+				}*/
+		super.onResume();
+	}
+
 	private void RefreshItems() {
-		AssetManager assetManager = getAssets();
-		InputStream input = null;
+		String xmlURL = "http://news.yahoo.com/rss/world/";
+		String rssFeed = null;
+		try {
+			rssFeed = getRSSxml(xmlURL);
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		try {
-			input = assetManager.open(DATA_FILENAME);
+			InputStream input = new ByteArrayInputStream(rssFeed.getBytes("UTF-8"));
+
 			RSS_Parser.parse(this, input);
 			if (input != null) {
 				input.close();
 			}
+			mActivePosition = -1;
+
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (XmlPullParserException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		/*		AssetManager assetManager = getAssets();
+				InputStream input = null;
+
+				try {
+					input = assetManager.open(DATA_FILENAME);
+					RSS_Parser.parse(this, input);
+					if (input != null) {
+						input.close();
+					}
+					mActivePosition = -1;
+
+				} catch (IOException e) {
+					MyLog.e("Main_ACTIVITY", "RefreshItems(): IOException opening " + DATA_FILENAME);
+					e.printStackTrace();
+
+				} catch (XmlPullParserException e) {
+					MyLog.e("Main_ACTIVITY", "RefreshItems(): XmlPullParserException parsing " + DATA_FILENAME);
+					e.printStackTrace();
+				} finally {
+
+				}*/
+	}
+
+	private String getRSSxml(String xmlURL) throws MalformedURLException {
+		URL url = new URL(xmlURL);
+		HttpURLConnection urlConnection = null;
+		String xmlData = "";
+		try {
+			urlConnection = (HttpURLConnection) url.openConnection();
+			InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+			byte buffer[] = new byte[4096];
+			int count;
+
+			while ((count = in.read(buffer)) != -1) {
+				xmlData += new String(buffer, 0, count);
+			}
 
 		} catch (IOException e) {
-			MyLog.e("Main_ACTIVITY", "RefreshItems(): IOException opening " + DATA_FILENAME);
-			e.printStackTrace();
-
-		} catch (XmlPullParserException e) {
-			MyLog.e("Main_ACTIVITY", "RefreshItems(): XmlPullParserException parsing " + DATA_FILENAME);
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-
+			if (urlConnection != null) {
+				urlConnection.disconnect();
+			}
 		}
-	}
 
-	private void DiscardItems() {
-		// TODO Auto-generated method stub
-
-	}
-
-	private void AcceptItems() {
-		// TODO Auto-generated method stub
-
+		return xmlData;
 	}
 
 	@Override
 	public boolean onNavigationItemSelected(int position, long channelID) {
+		MyLog.i("Main_ACTIVITY", "onNavigationItemSelected(); channelID = " + channelID);
 		// When the given dropdown item is selected, show its contents in the
 		// container view.
 		mActiveChannelID = channelID;
-		mChannelSpinnerPosition = position;
+		// mChannelSpinnerPosition = position;
 		getSupportFragmentManager().beginTransaction()
-				.replace(R.id.container, TitlesFragment.newInstance(mActiveChannelID))
+				.replace(R.id.container, TitlesFragment.newInstance(mActiveChannelID, mActivePosition))
 				.commit();
 		return true;
 	}

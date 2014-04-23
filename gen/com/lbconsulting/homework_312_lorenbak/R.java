@@ -1237,7 +1237,6 @@ containing a value of this type.
         public static final int selected_rectangle_red_stroke=0x7f02005e;
     }
     public static final class id {
-        public static final int action_acceptItems=0x7f05005a;
         public static final int action_bar=0x7f05001c;
         public static final int action_bar_activity_content=0x7f050015;
         public static final int action_bar_container=0x7f05001b;
@@ -1246,11 +1245,10 @@ containing a value of this type.
         public static final int action_bar_subtitle=0x7f050023;
         public static final int action_bar_title=0x7f050022;
         public static final int action_context_bar=0x7f05001d;
-        public static final int action_discardItems=0x7f05005b;
         public static final int action_menu_divider=0x7f050016;
         public static final int action_menu_presenter=0x7f050017;
         public static final int action_mode_close_button=0x7f050024;
-        public static final int action_refresh=0x7f050059;
+        public static final int action_refresh=0x7f050060;
         public static final int activityNewsArticlesLinearLayout=0x7f05003e;
         public static final int activity_chooser_view_content=0x7f050025;
         public static final int always=0x7f05000b;
@@ -1261,6 +1259,7 @@ containing a value of this type.
         public static final int collapseActionView=0x7f05000d;
         public static final int container=0x7f05003c;
         public static final int default_activity_button=0x7f050028;
+        public static final int deselect_all_articles=0x7f05005b;
         public static final int dialog=0x7f05000e;
         public static final int disableHome=0x7f050008;
         public static final int dropdown=0x7f05000f;
@@ -1303,6 +1302,12 @@ containing a value of this type.
         public static final int search_src_text=0x7f050037;
         public static final int search_voice_btn=0x7f05003b;
         public static final int section_label=0x7f05004f;
+        public static final int select_all_articles=0x7f05005a;
+        public static final int select_all_read_articles=0x7f050059;
+        public static final int select_articles_1day=0x7f05005d;
+        public static final int select_articles_1week=0x7f05005f;
+        public static final int select_articles_2days=0x7f05005e;
+        public static final int select_articles_4hours=0x7f05005c;
         public static final int shortcut=0x7f05002e;
         public static final int showCustom=0x7f050007;
         public static final int showHome=0x7f050004;
@@ -1454,11 +1459,15 @@ containing a value of this type.
         /** 
         Base application theme, dependent on API level. This theme is replaced
         by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
+
+
 	
 
             Theme customizations available in newer API levels can go in
             res/values-vXX/styles.xml, while customizations related to
             backward-compatibility can go here.
+
+
 		
 
         Base application theme for API 11+. This theme completely replaces
