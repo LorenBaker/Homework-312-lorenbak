@@ -71,7 +71,8 @@ public class RSS_Parser {
 
 				if (channelImage.size() > 0) {
 					for (ContentValues cv : channelImage) {
-						RSS_ImagesTable.CreateImage(context, channelID, cv);
+						long imageID = RSS_ImagesTable.CreateImage(context, channelID, cv);
+						RSS_ChannelsTable.setImageID(context, channelID, imageID);
 					}
 				}
 

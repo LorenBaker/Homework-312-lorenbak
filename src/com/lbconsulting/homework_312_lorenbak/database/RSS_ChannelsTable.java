@@ -305,6 +305,12 @@ public class RSS_ChannelsTable {
 		return numberOfUpdatedRecords;
 	}
 
+	public static void setImageID(Context context, long channelID, long imageID) {
+		ContentValues newFieldValues = new ContentValues();
+		newFieldValues.put(COL_IMAGE_ID, imageID);
+		UpdateChannelFieldValues(context, channelID, newFieldValues);
+	}
+
 	// /////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Delete Methods
 	// /////////////////////////////////////////////////////////////////////////////////////////////////////////

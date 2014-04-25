@@ -4,9 +4,16 @@
 	android:versionCode="1"
 	android:versionName="1.0" >
 
+	<!-- Increase minSdkVersion to use LruCache for images -->
+
 	<uses-sdk
-		android:minSdkVersion="11"
+		android:minSdkVersion="12"
 		android:targetSdkVersion="19" />
+
+	<uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+	<uses-feature android:name="android.hardware.sensor.accelerometer" />
 
 	<application
 		android:allowBackup="true"

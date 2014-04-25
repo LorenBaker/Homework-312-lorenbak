@@ -1231,10 +1231,13 @@ containing a value of this type.
         public static final int ic_action_accept=0x7f020058;
         public static final int ic_action_discard=0x7f020059;
         public static final int ic_action_refresh=0x7f02005a;
-        public static final int ic_launcher=0x7f02005b;
-        public static final int read_rectangle_black_stroke=0x7f02005c;
-        public static final int rectangle_black_stroke=0x7f02005d;
-        public static final int selected_rectangle_red_stroke=0x7f02005e;
+        public static final int ic_empty=0x7f02005b;
+        public static final int ic_error=0x7f02005c;
+        public static final int ic_launcher=0x7f02005d;
+        public static final int ic_stub=0x7f02005e;
+        public static final int read_rectangle_black_stroke=0x7f02005f;
+        public static final int rectangle_black_stroke=0x7f020060;
+        public static final int selected_rectangle_red_stroke=0x7f020061;
     }
     public static final class id {
         public static final int action_bar=0x7f05001c;
@@ -1446,7 +1449,11 @@ containing a value of this type.
         public static final int action_refresh_text=0x7f0a0015;
         public static final int action_settings=0x7f0a0011;
         public static final int app_name=0x7f0a000d;
+        public static final int clear_cache_complete_toast=0x7f0a001b;
+        public static final int clear_cache_menu=0x7f0a001a;
         public static final int imTitleIcon_text=0x7f0a0012;
+        public static final int imageview_description=0x7f0a001c;
+        public static final int no_network_connection_toast=0x7f0a001d;
         public static final int title_section1=0x7f0a000e;
         public static final int title_section2=0x7f0a000f;
         public static final int title_section3=0x7f0a0010;
