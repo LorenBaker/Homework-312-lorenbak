@@ -16,6 +16,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.lbconsulting.homework_312_lorenbak.MainActivity;
 import com.lbconsulting.homework_312_lorenbak.MyLog;
 import com.lbconsulting.homework_312_lorenbak.R;
 import com.lbconsulting.homework_312_lorenbak.database.RSS_ImagesTable;
@@ -63,25 +64,20 @@ public class TitlesCursorAdaptor extends CursorAdapter {
 			if (ivTitleIcon != null) {
 				long channelID = cursor.getLong(cursor.getColumnIndexOrThrow(RSS_ItemsTable.COL_CHANNEL_ID));
 				// long imageID = cursor.getLong(cursor.getColumnIndexOrThrow(RSS_ItemsTable.COL_IMAGE_ID));
-				String channelImageURL = "";
+				String imageKey = "";
 				if (channelID > 1) {
 					Cursor imageCursor = RSS_ImagesTable.getImage(context, channelID);
 
 					if (imageCursor != null) {
 						imageCursor.moveToFirst();
-						channelImageURL = imageCursor.getString(
-								imageCursor.getColumnIndexOrThrow(RSS_ImagesTable.COL_URL));
+						imageKey = String.valueOf(imageCursor.getLong(imageCursor
+								.getColumnIndexOrThrow(RSS_ImagesTable.COL_IMAGES_ID)));
 						imageCursor.close();
+						Bitmap imageBitmap = MainActivity.getMemoryCache().get(imageKey);
+						ivTitleIcon.setImageBitmap(imageBitmap);
+						MyLog.i("TitlesCursorAdaptor", "bindView()  channelID:" + channelID + "; imageKey:" + imageKey);
 					}
 				}
-				MyLog.i("TitlesCursorAdaptor", "bindView()  channelID:" + channelID + "; url:" + channelImageURL);
-
-				if (!channelImageURL.isEmpty()) {
-					/*MainActivity.imageLoader.displayImage(channelImageURL, ivTitleIcon, MainActivity.options,
-							animateFirstListener);*/
-				}
-
-				// TODO display image -- may need use a joined table query.
 			}
 
 			// long itemID = cursor.getLong(cursor.getColumnIndexOrThrow(RSS_ItemsTable.COL_ITEM_ID));

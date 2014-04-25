@@ -45,13 +45,13 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 	private int mActivePosition = -1;
 	// private int mChannelSpinnerPosition = 0;
 
-	private LruCache<String, Bitmap> mMemoryCache;
+	private static LruCache<String, Bitmap> mMemoryCache;
 	private TextProgressBar pbLoadingIndicator;
 
 	/*public static ImageLoader imageLoader = ImageLoader.getInstance();
 	public static DisplayImageOptions options;*/
 
-	public LruCache<String, Bitmap> getMemoryCache() {
+	public static LruCache<String, Bitmap> getMemoryCache() {
 		return mMemoryCache;
 	}
 
@@ -183,7 +183,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 
 		switch (item.getItemId()) {
 			case R.id.action_refresh:
-				RefreshItems();
+				LoadArticles();
 				return true;
 
 			default:
@@ -237,8 +237,8 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 		}*/
 	}
 
-	public void LoadArticles(String dataFilename) {
-		new LoadArticlesTask().execute(dataFilename);
+	public void LoadArticles() {
+		new LoadArticlesTask().execute();
 	}
 
 	private class LoadArticlesTask extends AsyncTask<Void, Void, Void> {
@@ -255,6 +255,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 			// until after all article data has been updated in the database
 			// HW311ContentProvider.setSupressUpdates(true);
 			RefreshArticles();
+			LoadChannelIcons();
 
 			// Simulate an Internet download to allow the loading indicator
 			// to be seen for a reasonable period of time
@@ -323,23 +324,41 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 		} finally {
 
 		}
-		
-		Bitmap bitmap;
-		BitmapFactory.Options options = new BitmapFactory.Options();
-		/*options.inJustDecodeBounds= true;
-		BitmapFactory.decodeFile(path, options); // Not really allocating pixels
-*/		options.inJustDecodeBounds= false;
-		
-		// fill the mMemoryCache with images
-		Cursor imagesCursor = RSS_ImagesTable.getAllImages();
-		if(imagesCursor!=null) {
-			imagesCursor.moveToPosition(-1);
-			while (imagesCursor.moveToNext()){
-				String imageURL = imagesCursor.getString(imagesCursor.getColumnIndexOrThrow(RSS_ImagesTable.COL_URL));
-				URL(imageURL).
+	}
+
+	private void LoadChannelIcons() {
+		Cursor cursor = RSS_ImagesTable.getChannelImageURLs(this);
+		String url = "";
+		Bitmap image = null;
+		String key = "";
+		if (cursor != null) {
+			while (cursor.moveToNext()) {
+				url = cursor.getString(cursor.getColumnIndexOrThrow(RSS_ImagesTable.COL_URL));
+				image = getImageFromWeb(url);
+				if (image != null) {
+					key = String.valueOf(cursor.getLong(cursor.getColumnIndexOrThrow(RSS_ImagesTable.COL_IMAGES_ID)));
+					getMemoryCache().put(key, image);
+				}
 			}
-			
 		}
+
+	}
+
+	private static Bitmap getImageFromWeb(String url) {
+		Bitmap bitmapImage = null;
+		if (url != null && !url.isEmpty()) {
+			try {
+				InputStream is = (InputStream) new URL(url).getContent();
+				bitmapImage = BitmapFactory.decodeStream(is);
+				if (is != null) {
+					is.close();
+				}
+
+			} catch (Exception e) {
+				MyLog.e("Main_ACTIVITY", "ERROR in getImageFromWeb(): " + e.getMessage());
+			}
+		}
+		return bitmapImage;
 	}
 
 	private String getRSSxml(String xmlURL) throws MalformedURLException {

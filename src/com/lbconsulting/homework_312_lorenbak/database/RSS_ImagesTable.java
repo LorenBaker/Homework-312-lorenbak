@@ -45,6 +45,8 @@ public class RSS_ImagesTable {
 			COL_URL, COL_TITLE, COL_LINK, COL_WIDTH, COL_HEIGHT, COL_DESCRIPTION
 	};
 
+	public static final String[] PROJECTION_IMAGE_URL = { COL_IMAGES_ID, COL_URL };
+
 	public static final String CONTENT_PATH = "images";
 	public static final String CONTENT_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE + "/" + "vnd.lbconsulting."
 			+ CONTENT_PATH;
@@ -187,6 +189,24 @@ public class RSS_ImagesTable {
 				MyLog.e("RSS_ImagesTable", "Exception error in getImage:");
 				e.printStackTrace();
 			}
+		}
+		return cursor;
+	}
+
+	public static Cursor getChannelImageURLs(Context context) {
+		Cursor cursor = null;
+		Uri uri = CONTENT_URI;
+		String[] projection = PROJECTION_IMAGE_URL;
+		String selection = COL_ITEM_ID + " = ?";
+		String selectionArgs[] = new String[] { String.valueOf(-1) };
+		String sortOrder = null;
+
+		ContentResolver cr = context.getContentResolver();
+
+		try {
+			cursor = cr.query(uri, projection, selection, selectionArgs, sortOrder);
+		} catch (Exception e) {
+			MyLog.e("RSS_ImagesTable", "Exception error in getChannelImageURLs: " + e.getMessage());
 		}
 		return cursor;
 	}
