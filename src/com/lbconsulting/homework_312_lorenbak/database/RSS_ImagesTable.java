@@ -211,6 +211,24 @@ public class RSS_ImagesTable {
 		return cursor;
 	}
 
+	public static Cursor getAllImages(Context context) {
+		Cursor cursor = null;
+		Uri uri = CONTENT_URI;
+		String[] projection = PROJECTION_IMAGE_URL;
+		String selection = null;
+		String selectionArgs[] = null;
+		String sortOrder = null;
+
+		ContentResolver cr = context.getContentResolver();
+
+		try {
+			cursor = cr.query(uri, projection, selection, selectionArgs, sortOrder);
+		} catch (Exception e) {
+			MyLog.e("RSS_ImagesTable", "Exception error in getAllImages: " + e.getMessage());
+		}
+		return cursor;
+	}
+
 	// /////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Update Methods
 	// /////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -16,6 +17,7 @@ import android.content.Loader;
 import android.content.res.AssetManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -35,6 +37,7 @@ import com.lbconsulting.homework_312_lorenbak.database.RSS_ChannelsTable;
 import com.lbconsulting.homework_312_lorenbak.database.RSS_ImagesTable;
 import com.lbconsulting.homework_312_lorenbak.fragments.TitlesFragment;
 import com.lbconsulting.homework_312_lorenbak.fragments.TitlesFragment.OnArticleSelected;
+import com.lbconsulting.homework_312_lorenbak.image_management.DiskLruImageCache;
 
 public class MainActivity extends ActionBarActivity implements ActionBar.OnNavigationListener, OnArticleSelected,
 		SensorEventListener, LoaderManager.LoaderCallbacks<Cursor> {
@@ -46,6 +49,9 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 	// private int mChannelSpinnerPosition = 0;
 
 	private static LruCache<String, Bitmap> mMemoryCache;
+	private static DiskLruImageCache mDiskCache;
+	private static int DISK_CACHE_SIZE = 1024 * 1024 * 16; // 16mb in bytes
+	private static String DISK_CACH_DIRECTORY = "HW312_Images";
 	private TextProgressBar pbLoadingIndicator;
 
 	/*public static ImageLoader imageLoader = ImageLoader.getInstance();
@@ -53,6 +59,10 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 
 	public static LruCache<String, Bitmap> getMemoryCache() {
 		return mMemoryCache;
+	}
+
+	public static DiskLruImageCache getDiskCache() {
+		return mDiskCache;
 	}
 
 	private LoaderManager mLoaderManager = null;
@@ -70,6 +80,26 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 		MyLog.i("Main_ACTIVITY", "onCreate()");
 		setContentView(R.layout.activity_main);
 
+		// setup mMemoryCache AND mDiskCache
+
+		// Get max available VM memory, exceeding this amount will throw an
+		// OutOfMemory exception. Stored in kilobytes as LruCache takes an
+		// int in its constructor.
+		final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
+		// Use 1/8th of the available memory for this memory cache.
+		final int cacheSize = maxMemory / 8;
+
+		mMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
+
+			@Override
+			protected int sizeOf(String key, Bitmap bitmap) {
+				// The cache size will be measured in kilobytes rather than
+				// number of items.
+				return bitmap.getByteCount() / 1024;
+			}
+		};
+		mDiskCache = new DiskLruImageCache(this, DISK_CACH_DIRECTORY, DISK_CACHE_SIZE, CompressFormat.JPEG, 80);
+
 		// verify that news feeds exist ... if not create some.
 		Cursor newsFeedURLs = RSS_ChannelsTable.getAllNewsFeedsCursor(this);
 		if (newsFeedURLs == null || newsFeedURLs.getCount() == 0) {
@@ -83,6 +113,23 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 				RSS_ChannelsTable.CreateChannel(this, url, title);
 				i++;
 			}
+		} else {
+			// News feeds exist ...
+			// get the stored images
+			Cursor cursor = RSS_ImagesTable.getAllImages(this);
+			if (cursor != null && cursor.getCount() > 0) {
+				// load images from the disk cache into the memory cache
+				// get all of the image IDs
+				ArrayList<String> imageIDs = new ArrayList<String>();
+				long imageID = -1;
+				while (cursor.moveToNext()) {
+					imageID = cursor.getLong(cursor.getColumnIndexOrThrow(RSS_ImagesTable.COL_IMAGES_ID));
+					imageIDs.add(String.valueOf(imageID));
+				}
+				new LoadImagesTask().execute(imageIDs);
+				cursor.close();
+			}
+
 		}
 		if (newsFeedURLs != null) {
 			newsFeedURLs.close();
@@ -103,26 +150,6 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 				.considerExifParams(true)
 				// .displayer(new RoundedBitmapDisplayer(20))
 				.build();*/
-
-		// setup mMemoryCache
-
-		// Get max available VM memory, exceeding this amount will throw an
-		// OutOfMemory exception. Stored in kilobytes as LruCache takes an
-		// int in its constructor.
-		final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
-
-		// Use 1/8th of the available memory for this memory cache.
-		final int cacheSize = maxMemory / 8;
-
-		mMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
-
-			@Override
-			protected int sizeOf(String key, Bitmap bitmap) {
-				// The cache size will be measured in kilobytes rather than
-				// number of items.
-				return bitmap.getByteCount() / 1024;
-			}
-		};
 
 		// Set up the adapter for the ActionBar dropdown list
 		mNewsFeedsCursorAdapter = new NewsFeedsSpinnerCursorAdapter(this, null, 0);
@@ -328,20 +355,28 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 
 	private void LoadChannelIcons() {
 		Cursor cursor = RSS_ImagesTable.getChannelImageURLs(this);
-		String url = "";
+		String imageUrl = "";
+		long imageID = -1;
 		Bitmap image = null;
 		String key = "";
 		if (cursor != null) {
 			while (cursor.moveToNext()) {
-				url = cursor.getString(cursor.getColumnIndexOrThrow(RSS_ImagesTable.COL_URL));
-				image = getImageFromWeb(url);
-				if (image != null) {
-					key = String.valueOf(cursor.getLong(cursor.getColumnIndexOrThrow(RSS_ImagesTable.COL_IMAGES_ID)));
-					getMemoryCache().put(key, image);
+				imageID = cursor.getLong(cursor.getColumnIndexOrThrow(RSS_ImagesTable.COL_IMAGES_ID));
+				key = String.valueOf(imageID);
+				imageUrl = cursor.getString(cursor.getColumnIndexOrThrow(RSS_ImagesTable.COL_URL));
+				if (imageUrl != null && !imageUrl.isEmpty() && imageID > 0) {
+					if (!getDiskCache().containsKey(key)) {
+						// load the image from the web
+						image = getImageFromWeb(imageUrl);
+						if (image != null) {
+							getMemoryCache().put(key, image);
+							getDiskCache().put(key, image);
+						}
+					}
 				}
 			}
+			cursor.close();
 		}
-
 	}
 
 	private static Bitmap getImageFromWeb(String url) {
@@ -359,6 +394,32 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 			}
 		}
 		return bitmapImage;
+	}
+
+	private class LoadImagesTask extends AsyncTask<ArrayList<String>, Void, Void> {
+
+		@Override
+		protected void onPreExecute() {
+			// Do nothing
+		}
+
+		@Override
+		protected Void doInBackground(ArrayList<String>... passing) {
+			ArrayList<String> imageIDs = passing[0]; // get passed arraylist
+			for (String id : imageIDs) {
+				if (getDiskCache().containsKey(id)) {
+					getMemoryCache().put(id, getDiskCache().getBitmap(id));
+				}
+			}
+			return null;
+		}
+
+		@Override
+		protected void onPostExecute(Void result) {
+			// Do nothing
+			super.onPostExecute(result);
+		}
+
 	}
 
 	private String getRSSxml(String xmlURL) throws MalformedURLException {

@@ -16,5 +16,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="libs/universal-image-loader-1.9.2-SNAPSHOT-with-sources.jar"/>
+	<classpathentry kind="lib" path="libs/disklrucache-2.0.2.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

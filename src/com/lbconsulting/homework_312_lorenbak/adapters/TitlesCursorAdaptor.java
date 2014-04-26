@@ -74,8 +74,15 @@ public class TitlesCursorAdaptor extends CursorAdapter {
 								.getColumnIndexOrThrow(RSS_ImagesTable.COL_IMAGES_ID)));
 						imageCursor.close();
 						Bitmap imageBitmap = MainActivity.getMemoryCache().get(imageKey);
-						ivTitleIcon.setImageBitmap(imageBitmap);
-						MyLog.i("TitlesCursorAdaptor", "bindView()  channelID:" + channelID + "; imageKey:" + imageKey);
+						if (imageBitmap != null) {
+							int height = imageBitmap.getHeight();
+							int width = imageBitmap.getWidth();
+							ivTitleIcon.getLayoutParams().height = height;
+							ivTitleIcon.getLayoutParams().width = width;
+							ivTitleIcon.setImageBitmap(imageBitmap);
+							MyLog.i("TitlesCursorAdaptor", "bindView()  channelID:" + channelID + "; imageKey:"
+									+ imageKey);
+						}
 					}
 				}
 			}
