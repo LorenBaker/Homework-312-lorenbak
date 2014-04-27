@@ -77,17 +77,17 @@ public class DiskLruImageCache {
 				mDiskCache.flush();
 				editor.commit();
 				if (BuildConfig.DEBUG) {
-					MyLog.d("DiskLruImageCache", "put: Image put on disk cache. key:" + key);
+					MyLog.d("DiskLruImageCache", "Image put on disk cache. key:" + key);
 				}
 			} else {
 				editor.abort();
 				if (BuildConfig.DEBUG) {
-					MyLog.d("DiskLruImageCache", "put: ERROR on: image put on disk cache. key: " + key);
+					MyLog.d("DiskLruImageCache", "ERROR on: image put on disk cache. key: " + key);
 				}
 			}
 		} catch (IOException e) {
 			if (BuildConfig.DEBUG) {
-				MyLog.d("DiskLruImageCache", "put: IOException on: image put on disk cache. key: " + key);
+				MyLog.d("DiskLruImageCache", "IOException on: image put on disk cache. key: " + key);
 			}
 			try {
 				if (editor != null) {
@@ -124,7 +124,8 @@ public class DiskLruImageCache {
 		}
 
 		if (BuildConfig.DEBUG) {
-			MyLog.d("DiskLruImageCache", "getBitmap: " + bitmap == null ? "" : "image read from disk " + key);
+			MyLog.d("DiskLruImageCache", "getBitmap: " + bitmap == null ? "Bitmap null. key:" + key
+					: "Image read from disk. key:" + key);
 		}
 
 		return bitmap;

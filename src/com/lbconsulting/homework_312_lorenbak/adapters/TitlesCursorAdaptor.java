@@ -68,7 +68,7 @@ public class TitlesCursorAdaptor extends CursorAdapter {
 				if (channelID > 1) {
 					Cursor imageCursor = RSS_ImagesTable.getImage(context, channelID);
 
-					if (imageCursor != null) {
+					if (imageCursor != null && imageCursor.getCount() > 0) {
 						imageCursor.moveToFirst();
 						imageKey = String.valueOf(imageCursor.getLong(imageCursor
 								.getColumnIndexOrThrow(RSS_ImagesTable.COL_IMAGES_ID)));
@@ -81,6 +81,10 @@ public class TitlesCursorAdaptor extends CursorAdapter {
 							ivTitleIcon.getLayoutParams().width = width;
 							ivTitleIcon.setImageBitmap(imageBitmap);
 							MyLog.i("TitlesCursorAdaptor", "bindView()  channelID:" + channelID + "; imageKey:"
+									+ imageKey);
+						} else {
+							MyLog.d("TitlesCursorAdaptor", "bindView(): imageBitmap is null!  channelID:" + channelID
+									+ "; imageKey:"
 									+ imageKey);
 						}
 					}

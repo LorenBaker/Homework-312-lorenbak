@@ -30,6 +30,7 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.TextView;
 
 import com.lbconsulting.homework_312_lorenbak.RSSreader.RSS_Parser;
 import com.lbconsulting.homework_312_lorenbak.adapters.NewsFeedsSpinnerCursorAdapter;
@@ -43,6 +44,9 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 		SensorEventListener, LoaderManager.LoaderCallbacks<Cursor> {
 
 	private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
+	private static final String FRAGMENT_TITLES = "frag_titles";
+	private TitlesFragment mTitlesFragment;
+
 	private long mActiveChannelID = 1;
 	private long mActiveArticleID = -1;
 	private int mActivePosition = -1;
@@ -52,6 +56,8 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 	private static DiskLruImageCache mDiskCache;
 	private static int DISK_CACHE_SIZE = 1024 * 1024 * 16; // 16mb in bytes
 	private static String DISK_CACH_DIRECTORY = "HW312_Images";
+
+	private TextView tvEmptyFragTitles;
 	private TextProgressBar pbLoadingIndicator;
 
 	/*public static ImageLoader imageLoader = ImageLoader.getInstance();
@@ -80,6 +86,9 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 		MyLog.i("Main_ACTIVITY", "onCreate()");
 		setContentView(R.layout.activity_main);
 
+		tvEmptyFragTitles = (TextView) findViewById(R.id.tvEmptyFragTitles);
+		pbLoadingIndicator = (TextProgressBar) findViewById(R.id.pbLoadingIndicator);
+
 		// setup mMemoryCache AND mDiskCache
 
 		// Get max available VM memory, exceeding this amount will throw an
@@ -100,6 +109,34 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 		};
 		mDiskCache = new DiskLruImageCache(this, DISK_CACH_DIRECTORY, DISK_CACHE_SIZE, CompressFormat.JPEG, 80);
 
+		// Set up the action bar to show a dropdown list.
+		final ActionBar actionBar = getSupportActionBar();
+		actionBar.setDisplayShowTitleEnabled(false);
+		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
+
+		// set up the universal image loader
+		/*options = new DisplayImageOptions.Builder()
+				.showImageOnLoading(R.drawable.ic_stub)
+				.showImageForEmptyUri(R.drawable.ic_empty)
+				.showImageOnFail(R.drawable.ic_error)
+				.cacheInMemory(true)
+				.cacheOnDisc(true)
+				.considerExifParams(true)
+				// .displayer(new RoundedBitmapDisplayer(20))
+				.build();*/
+
+		// Set up the adapter for the ActionBar dropdown list
+		mNewsFeedsCursorAdapter = new NewsFeedsSpinnerCursorAdapter(this, null, 0);
+		mNewsFeedsCallbacks = this;
+		mLoaderManager = getLoaderManager();
+
+		// mLoaderManager.initLoader(NEWS_FEEDS_LOADER_ID, null, mNewsFeedsCallbacks);
+
+		// Set up the dropdown list navigation in the action bar.
+		actionBar.setListNavigationCallbacks(
+				// Specify a Adapter to populate the dropdown list.
+				mNewsFeedsCursorAdapter, this);
+
 		// verify that news feeds exist ... if not create some.
 		Cursor newsFeedURLs = RSS_ChannelsTable.getAllNewsFeedsCursor(this);
 		if (newsFeedURLs == null || newsFeedURLs.getCount() == 0) {
@@ -113,6 +150,8 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 				RSS_ChannelsTable.CreateChannel(this, url, title);
 				i++;
 			}
+
+			initNewsFeedsLoader();
 		} else {
 			// News feeds exist ...
 			// get the stored images
@@ -135,32 +174,10 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 			newsFeedURLs.close();
 		}
 
-		// Set up the action bar to show a dropdown list.
-		final ActionBar actionBar = getSupportActionBar();
-		actionBar.setDisplayShowTitleEnabled(false);
-		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
+	}
 
-		// set up the universal image loader
-		/*options = new DisplayImageOptions.Builder()
-				.showImageOnLoading(R.drawable.ic_stub)
-				.showImageForEmptyUri(R.drawable.ic_empty)
-				.showImageOnFail(R.drawable.ic_error)
-				.cacheInMemory(true)
-				.cacheOnDisc(true)
-				.considerExifParams(true)
-				// .displayer(new RoundedBitmapDisplayer(20))
-				.build();*/
-
-		// Set up the adapter for the ActionBar dropdown list
-		mNewsFeedsCursorAdapter = new NewsFeedsSpinnerCursorAdapter(this, null, 0);
-		mNewsFeedsCallbacks = this;
-		mLoaderManager = getLoaderManager();
+	private void initNewsFeedsLoader() {
 		mLoaderManager.initLoader(NEWS_FEEDS_LOADER_ID, null, mNewsFeedsCallbacks);
-
-		// Set up the dropdown list navigation in the action bar.
-		actionBar.setListNavigationCallbacks(
-				// Specify a Adapter to populate the dropdown list.
-				mNewsFeedsCursorAdapter, this);
 	}
 
 	@Override
@@ -243,12 +260,16 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 		if (pbLoadingIndicator != null) {
 			pbLoadingIndicator.setVisibility(View.VISIBLE);
 		}
-		/*if (mTitlesListView != null) {
-			mTitlesListView.setVisibility(View.GONE);
-		}
+
+		getSupportFragmentManager().beginTransaction()
+				.remove(mTitlesFragment)
+				.commit();
+		/*		if (mTitlesListView != null) {
+					mTitlesListView.setVisibility(View.GONE);
+				}*/
 		if (tvEmptyFragTitles != null) {
 			tvEmptyFragTitles.setVisibility(View.GONE);
-		}*/
+		}
 	}
 
 	public void DismissLoadingIndicator() {
@@ -256,12 +277,17 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 		if (pbLoadingIndicator != null) {
 			pbLoadingIndicator.setVisibility(View.GONE);
 		}
-		/*if (mTitlesListView != null) {
-			mTitlesListView.setVisibility(View.VISIBLE);
-		}
+
+		mTitlesFragment = TitlesFragment.newInstance(mActiveChannelID, mActivePosition);
+		getSupportFragmentManager().beginTransaction()
+				.replace(R.id.container, mTitlesFragment, FRAGMENT_TITLES)
+				.commit();
+		/*		if (mTitlesListView != null) {
+					mTitlesListView.setVisibility(View.VISIBLE);
+				}*/
 		if (tvEmptyFragTitles != null) {
 			tvEmptyFragTitles.setVisibility(View.GONE);
-		}*/
+		}
 	}
 
 	public void LoadArticles() {
@@ -416,7 +442,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 
 		@Override
 		protected void onPostExecute(Void result) {
-			// Do nothing
+			initNewsFeedsLoader();
 			super.onPostExecute(result);
 		}
 
@@ -455,8 +481,9 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 		// container view.
 		mActiveChannelID = channelID;
 		// mChannelSpinnerPosition = position;
+		mTitlesFragment = TitlesFragment.newInstance(mActiveChannelID, mActivePosition);
 		getSupportFragmentManager().beginTransaction()
-				.replace(R.id.container, TitlesFragment.newInstance(mActiveChannelID, mActivePosition))
+				.replace(R.id.container, mTitlesFragment, FRAGMENT_TITLES)
 				.commit();
 		return true;
 	}
