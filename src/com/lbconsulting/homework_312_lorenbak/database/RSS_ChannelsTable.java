@@ -143,15 +143,14 @@ public class RSS_ChannelsTable {
 
 		String channelTitle = channelRequiredContentValues.getAsString("title");
 		String channelDescription = channelRequiredContentValues.getAsString("description");
-		String channelLink = channelRequiredContentValues.getAsString("link");
+		String channelLink = channelRequiredContentValues.getAsString("link"); // newsFeedURL
 
-		// NOTE: COL_LAST_REFRESH_DATE_TIME is updated via the content provider
 		long newChannelID = -1;
 		Cursor channelCursor = null;
 
-		if (channelTitle != null && !channelTitle.isEmpty()) {
+		if (channelLink != null && !channelLink.isEmpty()) {
 			// determine if the channel is already in the database
-			channelCursor = getChannelRequiredElements(context, channelTitle);
+			channelCursor = getNewsFeedCursor(context, channelLink);
 			if (channelCursor != null && channelCursor.getCount() > 0) {
 				// the channel exists in the database
 				// replace the channel's content and update the refresh date/time
@@ -159,12 +158,13 @@ public class RSS_ChannelsTable {
 				newChannelID = channelCursor.getLong(channelCursor.getColumnIndexOrThrow(COL_CHANNEL_ID));
 				ContentValues newFieldValues = new ContentValues();
 				newFieldValues.put(COL_DESCRIPTION, channelDescription);
-				newFieldValues.put(COL_LINK, channelLink);
+				newFieldValues.put(COL_TITLE, channelTitle);
 				UpdateChannelFieldValues(context, newChannelID, newFieldValues);
 				channelCursor.close();
 				return newChannelID;
 			}
-
+			// the channel does not exist in the database
+			// so create it.
 			Uri uri = CONTENT_URI;
 			ContentResolver cr = context.getContentResolver();
 			Uri newItemUri = cr.insert(uri, channelRequiredContentValues);
@@ -214,6 +214,29 @@ public class RSS_ChannelsTable {
 			cursor = cr.query(uri, projection, selection, selectionArgs, sortOrder);
 		} catch (Exception e) {
 			MyLog.e("RSS_ChannelsTable", "Exception error in getAllNewsFeedsCursor:");
+			e.printStackTrace();
+		}
+		return cursor;
+	}
+
+	public static Cursor getNewsFeedsCursor(Context context, long channelID) {
+		Uri uri = CONTENT_URI;
+		String[] projection = PROJECTION_NEWS_FEED_URLs;
+		String selection = COL_CHANNEL_ID + " != ?";
+		String selectionArgs[] = new String[] { String.valueOf(1) };
+		if (channelID > 1) {
+			selection = COL_CHANNEL_ID + " = ?";
+			selectionArgs = new String[] { String.valueOf(channelID) };
+		}
+
+		String sortOrder = SORT_ORDER_NEW_FEED_URL;
+
+		ContentResolver cr = context.getContentResolver();
+		Cursor cursor = null;
+		try {
+			cursor = cr.query(uri, projection, selection, selectionArgs, sortOrder);
+		} catch (Exception e) {
+			MyLog.e("RSS_ChannelsTable", "Exception error in getNewsFeedsCursor:");
 			e.printStackTrace();
 		}
 		return cursor;
@@ -271,23 +294,23 @@ public class RSS_ChannelsTable {
 		return cursor;
 	}
 
-	public static Cursor getChannelRequiredElements(Context context, String channelTitle) {
-		Uri uri = CONTENT_URI;
-		String[] projection = PROJECTION_REQUIRED_ELEMENTS;
-		String selection = COL_TITLE + " = ?";
-		String selectionArgs[] = new String[] { channelTitle };
-		String sortOrder = SORT_ORDER_TITLE;
+	/*	public static Cursor getChannelRequiredElements(Context context, String newsFeedURL) {
+			Uri uri = CONTENT_URI;
+			String[] projection = PROJECTION_REQUIRED_ELEMENTS;
+			String selection = COL_NEWS_FEED_URL + " = ?";
+			String selectionArgs[] = new String[] { newsFeedURL };
+			String sortOrder = SORT_ORDER_TITLE;
 
-		ContentResolver cr = context.getContentResolver();
-		Cursor cursor = null;
-		try {
-			cursor = cr.query(uri, projection, selection, selectionArgs, sortOrder);
-		} catch (Exception e) {
-			MyLog.e("RSS_ChannelsTable", "Exception error in getChannel:");
-			e.printStackTrace();
-		}
-		return cursor;
-	}
+			ContentResolver cr = context.getContentResolver();
+			Cursor cursor = null;
+			try {
+				cursor = cr.query(uri, projection, selection, selectionArgs, sortOrder);
+			} catch (Exception e) {
+				MyLog.e("RSS_ChannelsTable", "Exception error in getChannelRequiredElements:");
+				e.printStackTrace();
+			}
+			return cursor;
+		}*/
 
 	// /////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Update Methods

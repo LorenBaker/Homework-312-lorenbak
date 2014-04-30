@@ -1,11 +1,11 @@
 package com.lbconsulting.homework_312_lorenbak;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 
 import org.xmlpull.v1.XmlPullParserException;
@@ -14,7 +14,7 @@ import android.app.LoaderManager;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
-import android.content.res.AssetManager;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
@@ -43,25 +43,31 @@ import com.lbconsulting.homework_312_lorenbak.image_management.DiskLruImageCache
 public class MainActivity extends ActionBarActivity implements ActionBar.OnNavigationListener, OnArticleSelected,
 		SensorEventListener, LoaderManager.LoaderCallbacks<Cursor> {
 
-	private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
+	public static final String SHARED_PREFERENCES_NAME = "HW312_shared_preferences";
+
+	public static final String STATE_SELECTED_CHANNEL_ID = "selected_channel_id";
+	public static final String STATE_SELECTED_CHANNEL_POSITION = "selected_channel_position";
+	private long mSelectedChannelID = 1;
+
+	public static final String STATE_SELECTED_ARTICLE_ID = "selected_article_id";
+	public static final String STATE_SELECTED_ARTICLE_POSITION = "selected_article_position";
+	private long mSelectedArticleID = -1;
+	private int mSelectedArticlePosition = -1;
+
+	public static final String STATE_TITLES_LV_TOP = "lv_top";
+	public static final String STATE_TITLES_LV_FIRST_VISIBLE_POSITION = "lv_first_visible_position";
+	private int mListViewFirstVisiblePosition = 0;
+	private int mListViewTop = 0;
+
+	public static final String STATE_PAGER_NOTIFICATION = "pager_notification";
+
 	private static final String FRAGMENT_TITLES = "frag_titles";
 	private TitlesFragment mTitlesFragment;
-
-	private long mActiveChannelID = 1;
-	private long mActiveArticleID = -1;
-	private int mActivePosition = -1;
-	// private int mChannelSpinnerPosition = 0;
 
 	private static LruCache<String, Bitmap> mMemoryCache;
 	private static DiskLruImageCache mDiskCache;
 	private static int DISK_CACHE_SIZE = 1024 * 1024 * 16; // 16mb in bytes
 	private static String DISK_CACH_DIRECTORY = "HW312_Images";
-
-	private TextView tvEmptyFragTitles;
-	private TextProgressBar pbLoadingIndicator;
-
-	/*public static ImageLoader imageLoader = ImageLoader.getInstance();
-	public static DisplayImageOptions options;*/
 
 	public static LruCache<String, Bitmap> getMemoryCache() {
 		return mMemoryCache;
@@ -71,14 +77,13 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 		return mDiskCache;
 	}
 
+	private TextView tvEmptyFragTitles;
+	private TextView pbLoadingIndicator;
+
 	private LoaderManager mLoaderManager = null;
 	private LoaderManager.LoaderCallbacks<Cursor> mNewsFeedsCallbacks;
 	private NewsFeedsSpinnerCursorAdapter mNewsFeedsCursorAdapter;
 	private static final int NEWS_FEEDS_LOADER_ID = 2;
-
-	// private String DATA_FILENAME2 = "sample-rss-2.xml";
-	private String DATA_FILENAME1 = "GoogleNews.download.xml";
-	private String DATA_FILENAME2 = "Yahoo.download.xml";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -87,13 +92,12 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 		setContentView(R.layout.activity_main);
 
 		tvEmptyFragTitles = (TextView) findViewById(R.id.tvEmptyFragTitles);
-		pbLoadingIndicator = (TextProgressBar) findViewById(R.id.pbLoadingIndicator);
+		pbLoadingIndicator = (TextView) findViewById(R.id.pbLoadingIndicator);
 
 		// setup mMemoryCache AND mDiskCache
-
-		// Get max available VM memory, exceeding this amount will throw an
-		// OutOfMemory exception. Stored in kilobytes as LruCache takes an
-		// int in its constructor.
+		// Get max available VM memory
+		// Exceeding this amount will throw an OutOfMemory exception.
+		// Stored in kilobytes as LruCache takes an int in its constructor.
 		final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
 		// Use 1/8th of the available memory for this memory cache.
 		final int cacheSize = maxMemory / 8;
@@ -102,35 +106,22 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 
 			@Override
 			protected int sizeOf(String key, Bitmap bitmap) {
-				// The cache size will be measured in kilobytes rather than
-				// number of items.
+				// The cache size will be measured in kilobytes
+				// rather than the number of items.
 				return bitmap.getByteCount() / 1024;
 			}
 		};
-		mDiskCache = new DiskLruImageCache(this, DISK_CACH_DIRECTORY, DISK_CACHE_SIZE, CompressFormat.JPEG, 80);
+		mDiskCache = new DiskLruImageCache(this, DISK_CACH_DIRECTORY, DISK_CACHE_SIZE, CompressFormat.PNG, 80);
 
 		// Set up the action bar to show a dropdown list.
 		final ActionBar actionBar = getSupportActionBar();
 		actionBar.setDisplayShowTitleEnabled(false);
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
 
-		// set up the universal image loader
-		/*options = new DisplayImageOptions.Builder()
-				.showImageOnLoading(R.drawable.ic_stub)
-				.showImageForEmptyUri(R.drawable.ic_empty)
-				.showImageOnFail(R.drawable.ic_error)
-				.cacheInMemory(true)
-				.cacheOnDisc(true)
-				.considerExifParams(true)
-				// .displayer(new RoundedBitmapDisplayer(20))
-				.build();*/
-
 		// Set up the adapter for the ActionBar dropdown list
 		mNewsFeedsCursorAdapter = new NewsFeedsSpinnerCursorAdapter(this, null, 0);
 		mNewsFeedsCallbacks = this;
 		mLoaderManager = getLoaderManager();
-
-		// mLoaderManager.initLoader(NEWS_FEEDS_LOADER_ID, null, mNewsFeedsCallbacks);
 
 		// Set up the dropdown list navigation in the action bar.
 		actionBar.setListNavigationCallbacks(
@@ -140,7 +131,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 		// verify that news feeds exist ... if not create some.
 		Cursor newsFeedURLs = RSS_ChannelsTable.getAllNewsFeedsCursor(this);
 		if (newsFeedURLs == null || newsFeedURLs.getCount() == 0) {
-			// No news feeds exist ... so create some
+			// No news feeds exist in the database ... so create some
 			String[] urls = this.getResources().getStringArray(R.array.newsFeedURLs);
 			String[] titles = this.getResources().getStringArray(R.array.newsFeedTitles);
 			int i = 0;
@@ -150,11 +141,11 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 				RSS_ChannelsTable.CreateChannel(this, url, title);
 				i++;
 			}
-
 			initNewsFeedsLoader();
+
 		} else {
-			// News feeds exist ...
-			// get the stored images
+			// News feeds exist in the database ...
+			// get stored images
 			Cursor cursor = RSS_ImagesTable.getAllImages(this);
 			if (cursor != null && cursor.getCount() > 0) {
 				// load images from the disk cache into the memory cache
@@ -165,6 +156,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 					imageID = cursor.getLong(cursor.getColumnIndexOrThrow(RSS_ImagesTable.COL_IMAGES_ID));
 					imageIDs.add(String.valueOf(imageID));
 				}
+				// start an AsyncTask to load images from the persisted disk storage
 				new LoadImagesTask().execute(imageIDs);
 				cursor.close();
 			}
@@ -180,36 +172,37 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 		mLoaderManager.initLoader(NEWS_FEEDS_LOADER_ID, null, mNewsFeedsCallbacks);
 	}
 
-	@Override
-	public void onRestoreInstanceState(Bundle savedInstanceState) {
-		MyLog.i("Main_ACTIVITY", "onRestoreInstanceState()");
-		// Restore the previously serialized current dropdown position.
-		if (savedInstanceState.containsKey(STATE_SELECTED_NAVIGATION_ITEM)) {
-			getSupportActionBar().setSelectedNavigationItem(savedInstanceState.getInt(STATE_SELECTED_NAVIGATION_ITEM));
+	/*
+		@Override
+		public void onRestoreInstanceState(Bundle savedInstanceState) {
+			MyLog.i("Main_ACTIVITY", "onRestoreInstanceState()");
+			// Restore the previously serialized current dropdown position.
+			if (savedInstanceState.containsKey(STATE_SELECTED_CHANNEL_POSITION)) {
+				getSupportActionBar().setSelectedNavigationItem(savedInstanceState.getInt(STATE_SELECTED_CHANNEL_POSITION));
+			}
+
+			if (savedInstanceState.containsKey(STATE_SELECTED_ARTICLE_ID)) {
+				mSelectedArticleID = savedInstanceState.getLong(STATE_SELECTED_ARTICLE_ID);
+			}
+
+			if (savedInstanceState.containsKey(STATE_SELECTED_CHANNEL_ID)) {
+				mSelectedChannelID = savedInstanceState.getLong(STATE_SELECTED_CHANNEL_ID);
+			}
+
+			if (savedInstanceState.containsKey(STATE_SELECTED_ARTICLE_POSITION)) {
+				mSelectedArticlePosition = savedInstanceState.getInt(STATE_SELECTED_ARTICLE_POSITION);
+			}
 		}
 
-		if (savedInstanceState.containsKey("ActiveArticleID")) {
-			mActiveArticleID = savedInstanceState.getLong("ActiveArticleID");
-		}
-
-		if (savedInstanceState.containsKey("ActiveChannelID")) {
-			mActiveChannelID = savedInstanceState.getLong("ActiveChannelID");
-		}
-
-		if (savedInstanceState.containsKey("ActivePosition")) {
-			mActivePosition = savedInstanceState.getInt("ActivePosition");
-		}
-	}
-
-	@Override
-	public void onSaveInstanceState(Bundle outState) {
-		MyLog.i("Main_ACTIVITY", "onSaveInstanceState()");
-		// Serialize the current dropdown position.
-		outState.putInt(STATE_SELECTED_NAVIGATION_ITEM, getSupportActionBar().getSelectedNavigationIndex());
-		outState.putLong("ActiveArticleID", mActiveArticleID);
-		outState.putLong("ActiveChannelID", mActiveChannelID);
-		outState.putInt("ActivePosition", mActivePosition);
-	}
+		@Override
+		public void onSaveInstanceState(Bundle outState) {
+			MyLog.i("Main_ACTIVITY", "onSaveInstanceState()");
+			// Serialize the current dropdown position.
+			outState.putInt(STATE_SELECTED_CHANNEL_POSITION, getSupportActionBar().getSelectedNavigationIndex());
+			outState.putLong(STATE_SELECTED_ARTICLE_ID, mSelectedArticleID);
+			outState.putLong(STATE_SELECTED_CHANNEL_ID, mSelectedChannelID);
+			outState.putInt(STATE_SELECTED_ARTICLE_POSITION, mSelectedArticlePosition);
+		}*/
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -238,20 +231,37 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 	@Override
 	protected void onPause() {
 		MyLog.i("Main_ACTIVITY", "onPause()");
+
+		SharedPreferences settings = getSharedPreferences(SHARED_PREFERENCES_NAME, MODE_PRIVATE);
+		SharedPreferences.Editor storedStates = settings.edit();
+		storedStates.putLong(STATE_SELECTED_ARTICLE_ID, mSelectedArticleID);
+		storedStates.putInt(STATE_SELECTED_ARTICLE_POSITION, mSelectedArticlePosition);
+		storedStates.putLong(STATE_SELECTED_CHANNEL_ID, mSelectedChannelID);
+		storedStates.putInt(STATE_SELECTED_CHANNEL_POSITION, getSupportActionBar().getSelectedNavigationIndex());
+
+		storedStates.putInt(MainActivity.STATE_TITLES_LV_FIRST_VISIBLE_POSITION, mListViewFirstVisiblePosition);
+		storedStates.putInt(MainActivity.STATE_TITLES_LV_TOP, mListViewTop);
+
+		storedStates.commit();
 		super.onPause();
 	}
 
 	@Override
 	protected void onResume() {
 		MyLog.i("Main_ACTIVITY", "onResume()");
-		/*		SharedPreferences storedStates = getSharedPreferences("HW312", MODE_PRIVATE);
-				mActiveArticleID = storedStates.getLong("ActiveArticleID", -1);
-				mActiveChannelID = storedStates.getLong("ActiveChannelID", -1);
-				mActivePosition = storedStates.getInt("ActivePosition", -1);
+		SharedPreferences storedStates = getSharedPreferences(SHARED_PREFERENCES_NAME, MODE_PRIVATE);
+		mSelectedArticleID = storedStates.getLong(STATE_SELECTED_ARTICLE_ID, -1);
+		mSelectedArticlePosition = storedStates.getInt(STATE_SELECTED_ARTICLE_POSITION, -1);
 
-				if (mActivePosition > -1) {
-					mPager.setCurrentItem(mActivePosition);
-				}*/
+		mSelectedChannelID = storedStates.getLong(STATE_SELECTED_CHANNEL_ID, 1);
+		int selectedChannelPosition = storedStates.getInt(STATE_SELECTED_CHANNEL_POSITION, 0);
+
+		mListViewFirstVisiblePosition = storedStates.getInt(MainActivity.STATE_TITLES_LV_FIRST_VISIBLE_POSITION, 0);
+		mListViewTop = storedStates.getInt(MainActivity.STATE_TITLES_LV_TOP, 0);
+
+		// selecting the channel position (navigation item) loads the title fragment
+		getSupportActionBar().setSelectedNavigationItem(selectedChannelPosition);
+
 		super.onResume();
 	}
 
@@ -261,12 +271,12 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 			pbLoadingIndicator.setVisibility(View.VISIBLE);
 		}
 
-		getSupportFragmentManager().beginTransaction()
-				.remove(mTitlesFragment)
-				.commit();
-		/*		if (mTitlesListView != null) {
-					mTitlesListView.setVisibility(View.GONE);
-				}*/
+		android.support.v4.app.FragmentManager fm = getSupportFragmentManager();
+		if (fm.findFragmentByTag(FRAGMENT_TITLES) != null) {
+			fm.beginTransaction()
+					.remove(mTitlesFragment)
+					.commit();
+		}
 		if (tvEmptyFragTitles != null) {
 			tvEmptyFragTitles.setVisibility(View.GONE);
 		}
@@ -278,13 +288,11 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 			pbLoadingIndicator.setVisibility(View.GONE);
 		}
 
-		mTitlesFragment = TitlesFragment.newInstance(mActiveChannelID, mActivePosition);
+		mTitlesFragment = TitlesFragment.newInstance(mSelectedChannelID, mSelectedArticlePosition);
 		getSupportFragmentManager().beginTransaction()
 				.replace(R.id.container, mTitlesFragment, FRAGMENT_TITLES)
 				.commit();
-		/*		if (mTitlesListView != null) {
-					mTitlesListView.setVisibility(View.VISIBLE);
-				}*/
+
 		if (tvEmptyFragTitles != null) {
 			tvEmptyFragTitles.setVisibility(View.GONE);
 		}
@@ -310,14 +318,6 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 			RefreshArticles();
 			LoadChannelIcons();
 
-			// Simulate an Internet download to allow the loading indicator
-			// to be seen for a reasonable period of time
-			try {
-				Thread.sleep(2500);
-			} catch (InterruptedException e) {
-				MyLog.e("Titles_ACTIVITY",
-						"doInBackground(): InterruptedException " + dataFilename + "\n" + e.toString());
-			}
 			return null;
 		}
 
@@ -337,45 +337,55 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 
 	private void RefreshArticles() {
 
-		AssetManager assetManager = getAssets();
-		InputStream input1 = null;
-		InputStream input2 = null;
+		Cursor channelsCursor = RSS_ChannelsTable.getNewsFeedsCursor(this, mSelectedChannelID);
+		URL channelNewsFeedURL = null;
+		String channelNewsFeed = "";
+		long channelID = -1;
+		URLConnection connection = null;
+		HttpURLConnection httpURLConnection = null;
+		int responseCode = -1;
+		InputStream channelNewsFeedInputStream = null;
 
-		try {
-			input1 = assetManager.open(DATA_FILENAME1);
-			RSS_Parser.parse(this, input1);
-			if (input1 != null) {
-				input1.close();
+		if (channelsCursor != null && channelsCursor.getCount() > 0) {
+			while (channelsCursor.moveToNext()) {
+				channelID = channelsCursor.getLong(channelsCursor
+						.getColumnIndexOrThrow(RSS_ChannelsTable.COL_CHANNEL_ID));
+				channelNewsFeed = channelsCursor.getString(channelsCursor
+						.getColumnIndexOrThrow(RSS_ChannelsTable.COL_NEWS_FEED_URL));
+				if (channelID > 1) {
+					try {
+						// Create news feed URL
+						channelNewsFeedURL = new URL(channelNewsFeed);
+						// Create new HTTP URL connection
+						connection = channelNewsFeedURL.openConnection();
+						httpURLConnection = (HttpURLConnection) connection;
+
+						responseCode = httpURLConnection.getResponseCode();
+						if (responseCode == HttpURLConnection.HTTP_OK) {
+							// Get the news feed input stream
+							channelNewsFeedInputStream = httpURLConnection.getInputStream();
+							// Parse the input steam and save data to the database
+							RSS_Parser.parse(this, channelID, channelNewsFeedInputStream);
+							channelNewsFeedInputStream.close();
+						}
+
+					} catch (MalformedURLException e) {
+						MyLog.e("Main_ACTIVITY", "RefreshArticles(): MalformedURLException opening news feed: "
+								+ channelNewsFeed + ". " + e.getMessage());
+					} catch (IOException e) {
+						MyLog.e("Main_ACTIVITY", "RefreshArticles(): IOException opening news feed: " + channelNewsFeed
+								+ ". " + e.getMessage());
+					} catch (XmlPullParserException e) {
+						MyLog.e("Main_ACTIVITY", "RefreshArticles(): XmlPullParserException opening news feed: "
+								+ channelNewsFeed
+								+ ". " + e.getMessage());
+					}
+				}
 			}
-
-		} catch (IOException e) {
-			MyLog.e("Main_ACTIVITY", "RefreshItems(): IOException opening " + DATA_FILENAME1);
-			e.printStackTrace();
-
-		} catch (XmlPullParserException e) {
-			MyLog.e("Main_ACTIVITY", "RefreshItems(): XmlPullParserException parsing " + DATA_FILENAME1);
-			e.printStackTrace();
-		} finally {
-
 		}
 
-		try {
-			input2 = assetManager.open(DATA_FILENAME2);
-			RSS_Parser.parse(this, input2);
-			if (input2 != null) {
-				input2.close();
-			}
-			mActivePosition = -1;
-
-		} catch (IOException e) {
-			MyLog.e("Main_ACTIVITY", "RefreshItems(): IOException opening " + DATA_FILENAME2);
-			e.printStackTrace();
-
-		} catch (XmlPullParserException e) {
-			MyLog.e("Main_ACTIVITY", "RefreshItems(): XmlPullParserException parsing " + DATA_FILENAME2);
-			e.printStackTrace();
-		} finally {
-
+		if (channelsCursor != null) {
+			channelsCursor.close();
 		}
 	}
 
@@ -448,43 +458,43 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 
 	}
 
-	private String getRSSxml(String xmlURL) throws MalformedURLException {
-		URL url = new URL(xmlURL);
-		HttpURLConnection urlConnection = null;
-		String xmlData = "";
-		try {
-			urlConnection = (HttpURLConnection) url.openConnection();
-			InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-			byte buffer[] = new byte[4096];
-			int count;
+	/*	private String getRSSxml(String xmlURL) throws MalformedURLException {
+			URL url = new URL(xmlURL);
+			HttpURLConnection urlConnection = null;
+			String xmlData = "";
+			try {
+				urlConnection = (HttpURLConnection) url.openConnection();
+				InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+				byte buffer[] = new byte[4096];
+				int count;
 
-			while ((count = in.read(buffer)) != -1) {
-				xmlData += new String(buffer, 0, count);
+				while ((count = in.read(buffer)) != -1) {
+					xmlData += new String(buffer, 0, count);
+				}
+
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} finally {
+				if (urlConnection != null) {
+					urlConnection.disconnect();
+				}
 			}
 
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
-			if (urlConnection != null) {
-				urlConnection.disconnect();
-			}
-		}
-
-		return xmlData;
-	}
+			return xmlData;
+		}*/
 
 	@Override
 	public boolean onNavigationItemSelected(int position, long channelID) {
 		MyLog.i("Main_ACTIVITY", "onNavigationItemSelected(); channelID = " + channelID);
-		// When the given dropdown item is selected, show its contents in the
-		// container view.
-		mActiveChannelID = channelID;
-		// mChannelSpinnerPosition = position;
-		mTitlesFragment = TitlesFragment.newInstance(mActiveChannelID, mActivePosition);
+		mSelectedChannelID = channelID;
+		mListViewFirstVisiblePosition = 0;
+		mListViewTop = 0;
+		mTitlesFragment = TitlesFragment.newInstance(mSelectedChannelID, mSelectedArticlePosition);
 		getSupportFragmentManager().beginTransaction()
 				.replace(R.id.container, mTitlesFragment, FRAGMENT_TITLES)
 				.commit();
+
 		return true;
 	}
 
@@ -503,11 +513,11 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 	@Override
 	public void onArticleSelected(int position, long articleID) {
 		// start the NewsArticleActivity
-		mActivePosition = position;
+		mSelectedArticlePosition = position;
 		Intent newsArticleActivityIntent = new Intent(this, NewsArticleActivity.class);
-		newsArticleActivityIntent.putExtra("ActiveArticleID", articleID);
-		newsArticleActivityIntent.putExtra("ActiveChannelID", mActiveChannelID);
-		newsArticleActivityIntent.putExtra("ActivePosition", mActivePosition);
+		newsArticleActivityIntent.putExtra(STATE_SELECTED_ARTICLE_ID, articleID);
+		newsArticleActivityIntent.putExtra(STATE_SELECTED_CHANNEL_ID, mSelectedChannelID);
+		newsArticleActivityIntent.putExtra(STATE_SELECTED_ARTICLE_POSITION, mSelectedArticlePosition);
 		startActivity(newsArticleActivityIntent);
 	}
 

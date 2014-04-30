@@ -5,7 +5,9 @@ import java.util.Calendar;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -16,7 +18,6 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.lbconsulting.homework_312_lorenbak.MyLog;
 import com.lbconsulting.homework_312_lorenbak.R;
@@ -255,7 +256,9 @@ public class NewsArticleFragment extends Fragment {
 						@Override
 						public void onClick(View v) {
 							String url = (String) v.getTag();
-							Toast.makeText(getActivity(), url, Toast.LENGTH_LONG).show();
+							Intent i = new Intent(Intent.ACTION_VIEW);
+							i.setData(Uri.parse(url));
+							startActivity(i);
 						}
 					});
 				}

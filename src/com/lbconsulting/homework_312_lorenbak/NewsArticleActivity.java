@@ -15,9 +15,9 @@ public class NewsArticleActivity extends FragmentActivity {
 	private NewsArticlesPagerAdapter mNewsArticlesPagerAdapter;
 	private ViewPager mPager;
 
-	private long mActiveArticleID = -1;
-	private long mActiveChannelID = -1;
-	private int mActivePosition = -1;
+	private long mSelectedArticleID = -1;
+	private long mSelectedChannelID = -1;
+	private int mSelectedArticlePosition = -1;
 
 	// private NewsArticleFragment mNewsArticleFragment;
 	private View news_article_pager;
@@ -29,18 +29,18 @@ public class NewsArticleActivity extends FragmentActivity {
 		setContentView(R.layout.activity_news_articles_pager);
 
 		Bundle args = getIntent().getExtras();
-		mActiveArticleID = args.getLong("ActiveArticleID", -1);
-		mActiveChannelID = args.getLong("ActiveChannelID", -1);
-		mActivePosition = args.getInt("ActivePosition", -1);
+		mSelectedArticleID = args.getLong(MainActivity.STATE_SELECTED_ARTICLE_ID, -1);
+		mSelectedChannelID = args.getLong(MainActivity.STATE_SELECTED_CHANNEL_ID, -1);
+		mSelectedArticlePosition = args.getInt(MainActivity.STATE_SELECTED_ARTICLE_POSITION, -1);
 
-		SharedPreferences preferences = getSharedPreferences("HW312", MODE_PRIVATE);
+		SharedPreferences preferences = getSharedPreferences(MainActivity.SHARED_PREFERENCES_NAME, MODE_PRIVATE);
 		SharedPreferences.Editor applicationStates = preferences.edit();
-		applicationStates.putLong("ActiveArticleID", mActiveArticleID);
-		applicationStates.putLong("ActiveChannelID", mActiveChannelID);
-		applicationStates.putInt("ActivePosition", mActivePosition);
+		applicationStates.putLong(MainActivity.STATE_SELECTED_ARTICLE_ID, mSelectedArticleID);
+		applicationStates.putLong(MainActivity.STATE_SELECTED_CHANNEL_ID, mSelectedChannelID);
+		applicationStates.putInt(MainActivity.STATE_SELECTED_ARTICLE_POSITION, mSelectedArticlePosition);
 		applicationStates.commit();
 
-		mNewsArticlesPagerAdapter = new NewsArticlesPagerAdapter(getSupportFragmentManager(), this, mActiveChannelID);
+		mNewsArticlesPagerAdapter = new NewsArticlesPagerAdapter(getSupportFragmentManager(), this, mSelectedChannelID);
 		mPager = (ViewPager) findViewById(R.id.news_article_pager);
 		mPager.setAdapter(mNewsArticlesPagerAdapter);
 		mPager.setOnPageChangeListener(new OnPageChangeListener() {
@@ -56,9 +56,9 @@ public class NewsArticleActivity extends FragmentActivity {
 			@Override
 			public void onPageSelected(int position) {
 				MyLog.d("NewsArticle_ACTIVITY", "onPageSelected() - position = " + position);
-				mActivePosition = position;
-				mActiveArticleID = mNewsArticlesPagerAdapter.getNewsArticleID(position);
-				RSS_ItemsTable.setItemAsRead(NewsArticleActivity.this, mActiveArticleID); // set Article as read.
+				mSelectedArticlePosition = position;
+				mSelectedArticleID = mNewsArticlesPagerAdapter.getNewsArticleID(position);
+				RSS_ItemsTable.setItemAsRead(NewsArticleActivity.this, mSelectedArticleID); // set Article as read.
 			}
 		});
 
@@ -73,13 +73,13 @@ public class NewsArticleActivity extends FragmentActivity {
 	@Override
 	protected void onResume() {
 		MyLog.i("NewsArticle_ACTIVITY", "onResume()");
-		SharedPreferences storedStates = getSharedPreferences("HW312", MODE_PRIVATE);
-		mActiveArticleID = storedStates.getLong("ActiveArticleID", -1);
-		mActiveChannelID = storedStates.getLong("ActiveChannelID", -1);
-		mActivePosition = storedStates.getInt("ActivePosition", -1);
+		SharedPreferences storedStates = getSharedPreferences(MainActivity.SHARED_PREFERENCES_NAME, MODE_PRIVATE);
+		mSelectedArticleID = storedStates.getLong(MainActivity.STATE_SELECTED_ARTICLE_ID, -1);
+		mSelectedChannelID = storedStates.getLong(MainActivity.STATE_SELECTED_CHANNEL_ID, -1);
+		mSelectedArticlePosition = storedStates.getInt(MainActivity.STATE_SELECTED_ARTICLE_POSITION, -1);
 
-		if (mActivePosition > -1) {
-			mPager.setCurrentItem(mActivePosition);
+		if (mSelectedArticlePosition > -1) {
+			mPager.setCurrentItem(mSelectedArticlePosition);
 		}
 		super.onResume();
 	}
@@ -87,11 +87,13 @@ public class NewsArticleActivity extends FragmentActivity {
 	@Override
 	protected void onPause() {
 		MyLog.i("NewsArticle_ACTIVITY", "onPause()");
-		SharedPreferences preferences = getSharedPreferences("HW312", MODE_PRIVATE);
+		SharedPreferences preferences = getSharedPreferences(MainActivity.SHARED_PREFERENCES_NAME, MODE_PRIVATE);
 		SharedPreferences.Editor applicationStates = preferences.edit();
-		applicationStates.putLong("ActiveArticleID", mActiveArticleID);
-		applicationStates.putLong("ActiveChannelID", mActiveChannelID);
-		applicationStates.putInt("ActivePosition", mActivePosition);
+
+		applicationStates.putLong(MainActivity.STATE_SELECTED_ARTICLE_ID, mSelectedArticleID);
+		applicationStates.putLong(MainActivity.STATE_SELECTED_CHANNEL_ID, mSelectedChannelID);
+		applicationStates.putInt(MainActivity.STATE_SELECTED_ARTICLE_POSITION, mSelectedArticlePosition);
+
 		applicationStates.commit();
 		super.onPause();
 	}

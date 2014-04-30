@@ -2,9 +2,6 @@ package com.lbconsulting.homework_312_lorenbak.adapters;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -21,13 +18,8 @@ import com.lbconsulting.homework_312_lorenbak.MyLog;
 import com.lbconsulting.homework_312_lorenbak.R;
 import com.lbconsulting.homework_312_lorenbak.database.RSS_ImagesTable;
 import com.lbconsulting.homework_312_lorenbak.database.RSS_ItemsTable;
-import com.nostra13.universalimageloader.core.display.FadeInBitmapDisplayer;
-import com.nostra13.universalimageloader.core.listener.ImageLoadingListener;
-import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 
 public class TitlesCursorAdaptor extends CursorAdapter {
-
-	private ImageLoadingListener animateFirstListener = new AnimateFirstDisplayListener();
 
 	public TitlesCursorAdaptor(Context context, Cursor c, int flags) {
 		super(context, c, flags);
@@ -63,7 +55,6 @@ public class TitlesCursorAdaptor extends CursorAdapter {
 			ImageView ivTitleIcon = (ImageView) view.findViewById(R.id.ivTitleIcon);
 			if (ivTitleIcon != null) {
 				long channelID = cursor.getLong(cursor.getColumnIndexOrThrow(RSS_ItemsTable.COL_CHANNEL_ID));
-				// long imageID = cursor.getLong(cursor.getColumnIndexOrThrow(RSS_ItemsTable.COL_IMAGE_ID));
 				String imageKey = "";
 				if (channelID > 1) {
 					Cursor imageCursor = RSS_ImagesTable.getImage(context, channelID);
@@ -75,10 +66,6 @@ public class TitlesCursorAdaptor extends CursorAdapter {
 						imageCursor.close();
 						Bitmap imageBitmap = MainActivity.getMemoryCache().get(imageKey);
 						if (imageBitmap != null) {
-							int height = imageBitmap.getHeight();
-							int width = imageBitmap.getWidth();
-							ivTitleIcon.getLayoutParams().height = height;
-							ivTitleIcon.getLayoutParams().width = width;
 							ivTitleIcon.setImageBitmap(imageBitmap);
 							MyLog.i("TitlesCursorAdaptor", "bindView()  channelID:" + channelID + "; imageKey:"
 									+ imageKey);
@@ -91,7 +78,6 @@ public class TitlesCursorAdaptor extends CursorAdapter {
 				}
 			}
 
-			// long itemID = cursor.getLong(cursor.getColumnIndexOrThrow(RSS_ItemsTable.COL_ITEM_ID));
 			int isArticleSelected = cursor.getInt(cursor.getColumnIndexOrThrow(RSS_ItemsTable.COL_ITEM_SELECTED));
 			int isArticleRead = cursor.getInt(cursor.getColumnIndexOrThrow(RSS_ItemsTable.COL_ITEM_READ));
 
@@ -105,7 +91,6 @@ public class TitlesCursorAdaptor extends CursorAdapter {
 			if (isArticleSelected == 1) {
 				view.setBackgroundColor(context.getResources().getColor(R.color.blueLight));
 			}
-
 		}
 	}
 
@@ -115,23 +100,6 @@ public class TitlesCursorAdaptor extends CursorAdapter {
 		LayoutInflater inflater = LayoutInflater.from(context);
 		View view = inflater.inflate(R.layout.row_title, parent, false);
 		return view;
-	}
-
-	private static class AnimateFirstDisplayListener extends SimpleImageLoadingListener {
-
-		static final List<String> displayedImages = Collections.synchronizedList(new LinkedList<String>());
-
-		@Override
-		public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
-			if (loadedImage != null) {
-				ImageView imageView = (ImageView) view;
-				boolean firstDisplay = !displayedImages.contains(imageUri);
-				if (firstDisplay) {
-					FadeInBitmapDisplayer.animate(imageView, 500);
-					displayedImages.add(imageUri);
-				}
-			}
-		}
 	}
 
 }

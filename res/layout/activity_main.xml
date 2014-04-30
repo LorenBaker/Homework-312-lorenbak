@@ -16,13 +16,14 @@
 		android:textStyle="bold|italic"
 		android:visibility="gone" />
 
-	<com.lbconsulting.homework_312_lorenbak.TextProgressBar
+	<TextView
 		android:id="@+id/pbLoadingIndicator"
-		android:layout_width="150dp"
-		android:layout_height="150dp"
-		android:layout_gravity="center"
-		android:indeterminateOnly="true"
-		android:keepScreenOn="true"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:gravity="center"
+		android:text="Loading Indicator"
+		android:textSize="28sp"
+		android:textStyle="bold|italic"
 		android:visibility="gone" />
 
 </FrameLayout>

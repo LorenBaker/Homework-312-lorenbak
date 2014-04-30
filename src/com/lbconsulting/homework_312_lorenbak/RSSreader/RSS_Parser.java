@@ -39,26 +39,27 @@ public class RSS_Parser {
 	private static ArrayList<ContentValues> channelSkipHours;
 	private static ArrayList<ContentValues> channelTextInputs;
 
-	public static void parse(Context context, InputStream in) throws XmlPullParserException, IOException {
-		try {
-			XmlPullParser parser = Xml.newPullParser();
-			parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
-			parser.setInput(in, null);
-			parser.nextTag();
-
-			while (!parser.getName().equals(RSS_Channel.TAG_CHANNEL)) {
+	public static void parse(Context context, long channelID, InputStream in) throws XmlPullParserException,
+			IOException {
+		if (channelID > 1) {
+			try {
+				XmlPullParser parser = Xml.newPullParser();
+				parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+				parser.setInput(in, null);
 				parser.nextTag();
+
+				while (!parser.getName().equals(RSS_Channel.TAG_CHANNEL)) {
+					parser.nextTag();
+				}
+				readFeed(parser);
+			} finally {
+				in.close();
 			}
-			readFeed(parser);
-		} finally {
-			in.close();
-		}
 
-		// the channel data is now in various ContentValues ready to be added to the database
-		if (channelHasRequiredElements(channelsRequiredContentValues)) {
-			long channelID = RSS_ChannelsTable.CreateChannel(context, channelsRequiredContentValues);
+			// refreshed channel data is now in various ContentValues ready to be added to the database
+			if (channelHasRequiredElements(channelsRequiredContentValues)) {
+				RSS_ChannelsTable.UpdateChannelFieldValues(context, channelID, channelsRequiredContentValues);
 
-			if (channelID > 0) {
 				if (channelsOptionalContentValues.size() > 0) {
 					RSS_ChannelsTable.UpdateChannelFieldValues(context, channelID, channelsOptionalContentValues);
 				}
@@ -650,8 +651,8 @@ public class RSS_Parser {
 			// MyLog.d("RSS_Parser:getAttributes", "Attributes for [" + parser.getName() + "]");
 			attrs = new HashMap<String, String>(attributeCount);
 			for (int x = 0; x < attributeCount; x++) {
-				MyLog.d("RSS_Parser:getAttributes", "\t[" + parser.getAttributeName(x) + "]=" +
-						"[" + parser.getAttributeValue(x) + "]");
+				/*MyLog.d("RSS_Parser:getAttributes", "\t[" + parser.getAttributeName(x) + "]=" +
+						"[" + parser.getAttributeValue(x) + "]");*/
 				String name = parser.getAttributeName(x);
 				String value = parser.getAttributeValue(x);
 				if (!name.isEmpty()) {
