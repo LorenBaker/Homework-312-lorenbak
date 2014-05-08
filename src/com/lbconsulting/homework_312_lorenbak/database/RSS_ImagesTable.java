@@ -211,6 +211,24 @@ public class RSS_ImagesTable {
 		return cursor;
 	}
 
+	public static Cursor getItemImageURLs(Context context) {
+		Cursor cursor = null;
+		Uri uri = CONTENT_URI;
+		String[] projection = PROJECTION_IMAGE_URL;
+		String selection = COL_ITEM_ID + " > ?";
+		String selectionArgs[] = new String[] { String.valueOf(0) };
+		String sortOrder = null;
+
+		ContentResolver cr = context.getContentResolver();
+
+		try {
+			cursor = cr.query(uri, projection, selection, selectionArgs, sortOrder);
+		} catch (Exception e) {
+			MyLog.e("RSS_ImagesTable", "Exception error in getItemImageURLs: " + e.getMessage());
+		}
+		return cursor;
+	}
+
 	public static Cursor getAllImages(Context context) {
 		Cursor cursor = null;
 		Uri uri = CONTENT_URI;

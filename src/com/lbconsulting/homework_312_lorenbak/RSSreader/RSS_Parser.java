@@ -10,6 +10,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -38,6 +42,7 @@ public class RSS_Parser {
 	private static ArrayList<ContentValues> channelSkipDays;
 	private static ArrayList<ContentValues> channelSkipHours;
 	private static ArrayList<ContentValues> channelTextInputs;
+	private static HashMap<String, ArrayList<ContentValues>> itemsImages = new HashMap<String, ArrayList<ContentValues>>();
 
 	public static void parse(Context context, long channelID, InputStream in) throws XmlPullParserException,
 			IOException {
@@ -65,8 +70,23 @@ public class RSS_Parser {
 				}
 
 				if (channelItems.size() > 0) {
+					long itemID = -1;
+					long itemImageID = -1;
+					ContentValues imageContentValues;
+					ContentValues itemContentValues;
 					for (ContentValues cv : channelItems) {
-						RSS_ItemsTable.CreateItem(context, channelID, cv);
+						itemID = RSS_ItemsTable.CreateItem(context, channelID, cv);
+						String itemTitle = cv.getAsString(RSS_ItemsTable.COL_TITLE);
+						if (itemsImages.containsKey(itemTitle)) {
+							ArrayList<ContentValues> images = itemsImages.get(itemTitle);
+							imageContentValues = images.get(0);
+							itemImageID = RSS_ImagesTable.CreateImage(context, channelID, itemID, imageContentValues);
+							if (itemImageID > 0 && itemID > 0) {
+								itemContentValues = new ContentValues();
+								itemContentValues.put(RSS_ItemsTable.COL_IMAGE_ID, itemImageID);
+								RSS_ItemsTable.UpdateItemlFieldValues(context, itemID, itemContentValues);
+							}
+						}
 					}
 				}
 
@@ -214,6 +234,15 @@ public class RSS_Parser {
 		String source = null;
 		HashMap<String, String> sourceAttributes = null;
 
+		String imageURL;
+		String imageHeight;
+		int height;
+		String imageWidth;
+		int width;
+		String alt;
+		String imageDescription;
+		ArrayList<ContentValues> itemImages = new ArrayList<ContentValues>();
+
 		while (parser.next() != XmlPullParser.END_TAG) {
 			if (parser.getEventType() != XmlPullParser.START_TAG) {
 				continue;
@@ -230,7 +259,110 @@ public class RSS_Parser {
 
 			} else if (name.equals(RSS_Channel.RSS_Item.TAG_TEXT_ITEM_DESCRIPTION)) {
 				description = readText(parser);
-				itemsContentValues.put(RSS_ItemsTable.COL_DESCRIPTION, description);
+				StringBuilder descriptionStringBuilder = new StringBuilder();
+				if (description.contains("<p>")) {
+
+					Document doc = Jsoup.parse(description);
+					Elements media = doc.select("[src]");
+					Elements paragraphs = doc.select("p");
+
+					for (Element eParagraph : paragraphs) {
+						descriptionStringBuilder.append(eParagraph.text());
+						descriptionStringBuilder.append(System.getProperty("line.separator"));
+					}
+
+					for (Element src : media) {
+						if (src.tagName().equals("img")) {
+							imageURL = src.attr("abs:src");
+							imageHeight = src.attr("height");
+							height = Integer.parseInt(imageHeight);
+							imageWidth = src.attr("width");
+							width = Integer.parseInt(imageWidth);
+							imageDescription = src.attr("title");
+							ContentValues cvImage = new ContentValues();
+							cvImage.put(RSS_ImagesTable.COL_URL, imageURL);
+							cvImage.put(RSS_ImagesTable.COL_DESCRIPTION, imageDescription);
+
+							// Maximum value for height is 400, default value is 31.
+							if (height > 0) {
+								if (height > 400) {
+									height = 400;
+								}
+								cvImage.put(RSS_ImagesTable.COL_HEIGHT, height);
+							}
+
+							// Maximum value for width is 144, default value is 88.
+							if (width > 0) {
+								if (width > 144) {
+									width = 144;
+								}
+								cvImage.put(RSS_ImagesTable.COL_WIDTH, width);
+							}
+
+							itemImages.add(cvImage);
+
+						}
+					}
+
+				} else if (description.contains("<table ")) {
+					Document doc = Jsoup.parse(description);
+					Elements media = doc.select("[src]");
+					Elements paragraphs = doc.select("table");
+					/*					Elements hyperLinks = doc.select("a");
+
+										int i = 0;
+										for (Element hyperLink : hyperLinks) {
+											String text = i + ":" + hyperLink.text();
+											MyLog.d("RSS_Parser", text);
+											int temp = 0;
+											i++;
+										}*/
+
+					for (Element eParagraph : paragraphs) {
+						descriptionStringBuilder.append(eParagraph.text());
+						descriptionStringBuilder.append(System.getProperty("line.separator"));
+					}
+
+					for (Element src : media) {
+						if (src.tagName().equals("img")) {
+							imageURL = "http:" + src.attr("src");
+							imageHeight = src.attr("height");
+							height = Integer.parseInt(imageHeight);
+							imageWidth = src.attr("width");
+							width = Integer.parseInt(imageWidth);
+							imageDescription = src.attr("title");
+							ContentValues cvImage = new ContentValues();
+							cvImage.put(RSS_ImagesTable.COL_URL, imageURL);
+							cvImage.put(RSS_ImagesTable.COL_DESCRIPTION, imageDescription);
+
+							// Maximum value for height is 400, default value is 31.
+							if (height > 0) {
+								if (height > 400) {
+									height = 400;
+								}
+								cvImage.put(RSS_ImagesTable.COL_HEIGHT, height);
+							}
+
+							// Maximum value for width is 144, default value is 88.
+							if (width > 0) {
+								if (width > 144) {
+									width = 144;
+								}
+								cvImage.put(RSS_ImagesTable.COL_WIDTH, width);
+							}
+							itemImages.add(cvImage);
+						}
+					}
+
+				} else {
+					// description does not contain HTTP elements
+					descriptionStringBuilder.append(description);
+				}
+
+				itemsContentValues.put(RSS_ItemsTable.COL_DESCRIPTION, descriptionStringBuilder.toString());
+				if (itemImages.size() > 0) {
+					itemsImages.put(title, itemImages);
+				}
 
 			} else if (name.equals(RSS_Channel.RSS_Item.TAG_TEXT_ITEM_AUTHOR)) {
 				author = readText(parser);
@@ -437,9 +569,9 @@ public class RSS_Parser {
 
 	private static boolean imageHasRequiredElements(ContentValues imageContentValues) {
 		boolean result = false;
-		if (imageContentValues.containsKey("url") &&
-				imageContentValues.containsKey("title") &&
-				imageContentValues.containsKey("link")) {
+		if (imageContentValues.containsKey(RSS_ImagesTable.COL_URL) &&
+				imageContentValues.containsKey(RSS_ImagesTable.COL_TITLE) &&
+				imageContentValues.containsKey(RSS_ImagesTable.COL_LINK)) {
 			result = true;
 		}
 		return result;

@@ -7,9 +7,11 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -19,6 +21,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.lbconsulting.homework_312_lorenbak.MainActivity;
 import com.lbconsulting.homework_312_lorenbak.MyLog;
 import com.lbconsulting.homework_312_lorenbak.R;
 import com.lbconsulting.homework_312_lorenbak.database.RSS_ImagesTable;
@@ -26,10 +29,12 @@ import com.lbconsulting.homework_312_lorenbak.database.RSS_ItemsTable;
 
 public class NewsArticleFragment extends Fragment {
 
-	private long mActiveArticleID;
-	private long mActiveChannelID;
+	private long mSelectedArticleID;
+	private long mSelectedChannelID;
 	private LinearLayout fragNewsArticleLinearLayout;
-	private TextView tvEmptyNewsArticle;
+	private int mImageWidth_px;
+
+	// private TextView tvEmptyNewsArticle;
 
 	public NewsArticleFragment() {
 		// Empty constructor
@@ -40,10 +45,16 @@ public class NewsArticleFragment extends Fragment {
 		// Supply channelID and articleID inputs as an argument.
 		long channelID = RSS_ItemsTable.getChannelID(context, articleID);
 		Bundle args = new Bundle();
-		args.putLong("ActiveChannelID", channelID);
-		args.putLong("ActiveArticleID", articleID);
+		args.putLong(MainActivity.STATE_SELECTED_CHANNEL_ID, channelID);
+		args.putLong(MainActivity.STATE_SELECTED_ARTICLE_ID, articleID);
 		f.setArguments(args);
 		return f;
+	}
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		MyLog.i("NewsArticleFragment", "onCreate()");
+		super.onCreate(savedInstanceState);
 	}
 
 	@Override
@@ -62,30 +73,31 @@ public class NewsArticleFragment extends Fragment {
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		MyLog.i("NewsArticleFragment", "onCreateView()");
 
-		if (savedInstanceState != null && savedInstanceState.containsKey("ActiveChannelID")
-				&& savedInstanceState.containsKey("ActiveArticleID")) {
-			mActiveChannelID = savedInstanceState.getLong("ActiveChannelID", 0);
-			mActiveArticleID = savedInstanceState.getLong("ActiveArticleID", 0);
+		if (savedInstanceState != null && savedInstanceState.containsKey(MainActivity.STATE_SELECTED_CHANNEL_ID)
+				&& savedInstanceState.containsKey(MainActivity.STATE_SELECTED_ARTICLE_ID)) {
+			mSelectedChannelID = savedInstanceState.getLong(MainActivity.STATE_SELECTED_CHANNEL_ID, 1);
+			mSelectedArticleID = savedInstanceState.getLong(MainActivity.STATE_SELECTED_ARTICLE_ID, -1);
 		} else {
 			Bundle bundle = getArguments();
 			if (bundle != null) {
-				mActiveChannelID = bundle.getLong("ActiveChannelID", 0);
-				mActiveArticleID = bundle.getLong("ActiveArticleID", 0);
+				mSelectedChannelID = bundle.getLong(MainActivity.STATE_SELECTED_CHANNEL_ID, 0);
+				mSelectedArticleID = bundle.getLong(MainActivity.STATE_SELECTED_ARTICLE_ID, 0);
 			}
 		}
 
+		DisplayMetrics displayMetrics = getActivity().getResources().getDisplayMetrics();
+		int padding_dp = 5;
+		int padding_px = Math.round(padding_dp * (displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT));
+		mImageWidth_px = (displayMetrics.widthPixels / 2) - padding_px;
+
 		View view = inflater.inflate(R.layout.frag_news_article, container, false);
 		fragNewsArticleLinearLayout = (LinearLayout) view.findViewById(R.id.fragNewsArticleLinearLayout);
-		tvEmptyNewsArticle = (TextView) view.findViewById(R.id.tvEmptyNewsArticle);
 
-		if (mActiveArticleID > 0) {
-			Cursor articleCursor = RSS_ItemsTable.getItem(getActivity(), mActiveArticleID);
+		if (mSelectedArticleID > 0) {
+			Cursor articleCursor = RSS_ItemsTable.getItem(getActivity(), mSelectedArticleID);
 
 			if (fragNewsArticleLinearLayout != null) {
 				fragNewsArticleLinearLayout.setVisibility(View.VISIBLE);
-			}
-			if (tvEmptyNewsArticle != null) {
-				tvEmptyNewsArticle.setVisibility(View.GONE);
 			}
 
 			if (articleCursor != null) {
@@ -162,48 +174,52 @@ public class NewsArticleFragment extends Fragment {
 				LinearLayout articleImageLinearLayout = (LinearLayout) view.findViewById(R.id.articleImageLinearLayout);
 
 				if (articleImageID > 0) {
-					Cursor imageCursor = RSS_ImagesTable.getImage(getActivity(), mActiveChannelID, mActiveArticleID);
+					Cursor imageCursor = RSS_ImagesTable
+							.getImage(getActivity(), mSelectedChannelID, mSelectedArticleID);
 					if (imageCursor != null) {
 						imageCursor.moveToFirst();
-						String imageURL = imageCursor.getString(imageCursor
-								.getColumnIndexOrThrow(RSS_ImagesTable.COL_URL));
-						String imageTitle = imageCursor.getString(imageCursor
-								.getColumnIndexOrThrow(RSS_ImagesTable.COL_TITLE));
 						String imageDescription = imageCursor.getString(imageCursor
 								.getColumnIndexOrThrow(RSS_ImagesTable.COL_DESCRIPTION));
 						int imageHeight = imageCursor.getInt(imageCursor
 								.getColumnIndexOrThrow(RSS_ImagesTable.COL_HEIGHT));
 						int imageWidth = imageCursor.getInt(imageCursor
 								.getColumnIndexOrThrow(RSS_ImagesTable.COL_WIDTH));
+						long imageID = imageCursor.getLong(imageCursor
+								.getColumnIndexOrThrow(RSS_ImagesTable.COL_IMAGES_ID));
+						String imageKey = String.valueOf(imageID);
 
 						ImageView ivArticleImage = (ImageView) view.findViewById(R.id.ivArticleImage);
-						if (ivArticleImage != null && imageURL != null && !imageURL.isEmpty()) {
-							// display the article image
-							ivArticleImage.getLayoutParams().height = imageHeight;
-							ivArticleImage.getLayoutParams().width = imageWidth;
-							// TODO fill ivArticleImage with image from the Internet
+						if (ivArticleImage != null) {
+							// scale the article image
+							int scale = mImageWidth_px / imageWidth;
+							ivArticleImage.getLayoutParams().height = imageHeight * scale;
+							ivArticleImage.getLayoutParams().width = mImageWidth_px;
 
-							// set article title
-							if (imageTitle != null && !imageTitle.isEmpty()) {
-								TextView tvArticleImageTitle = (TextView) view.findViewById(R.id.tvArticleImageTitle);
-								if (tvArticleImageTitle != null) {
-									tvArticleImageTitle.setText(imageTitle);
-								}
-							}
+							// get the article image bitmap
+							Bitmap imageBitmap = MainActivity.getDiskCache().getBitmap(imageKey);
+							if (imageBitmap != null) {
+								ivArticleImage.setImageBitmap(imageBitmap);
 
-							// set article description
-							if (imageDescription != null && !imageDescription.isEmpty()) {
+								// set article description
 								TextView tvArticleImageDescription = (TextView) view
 										.findViewById(R.id.tvArticleImageDescription);
 								if (tvArticleImageDescription != null) {
-									tvArticleImageDescription.setText(imageDescription);
+									if (imageDescription != null && !imageDescription.isEmpty()) {
+										tvArticleImageDescription.setText(imageDescription);
+									} else {
+										tvArticleImageDescription.setVisibility(View.INVISIBLE);
+									}
+								}
+							} else {
+								// there is no image for this article ...
+								if (articleImageLinearLayout != null) {
+									articleImageLinearLayout.setVisibility(View.GONE);
 								}
 							}
-
 							// set as visible
-							if (articleImageLinearLayout != null) {
-								articleImageLinearLayout.setVisibility(View.VISIBLE);
-							}
+							/*							if (articleImageLinearLayout != null) {
+															articleImageLinearLayout.setVisibility(View.VISIBLE);
+														}*/
 						} else {
 							// there is no image for this article ...
 							if (articleImageLinearLayout != null) {
@@ -211,6 +227,12 @@ public class NewsArticleFragment extends Fragment {
 							}
 						}
 						imageCursor.close();
+					} else {
+						// there is no image for this article ...
+						if (articleImageLinearLayout != null) {
+							articleImageLinearLayout.setVisibility(View.GONE);
+						}
+
 					}
 				} else {
 					// there is no image for this article ...
@@ -273,18 +295,24 @@ public class NewsArticleFragment extends Fragment {
 			if (fragNewsArticleLinearLayout != null) {
 				fragNewsArticleLinearLayout.setVisibility(View.GONE);
 			}
-			if (tvEmptyNewsArticle != null) {
-				tvEmptyNewsArticle.setVisibility(View.VISIBLE);
-			}
+			/*			if (tvEmptyNewsArticle != null) {
+							tvEmptyNewsArticle.setVisibility(View.VISIBLE);
+						}*/
 		}
 		return view;
+	}
+
+	public static int dpToPx(Context context, int dp) {
+		DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+		int px = Math.round(dp * (displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT));
+		return px;
 	}
 
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
 		MyLog.i("NewsArticleFragment", "onSaveInstanceState()");
-		outState.putLong("ActiveChannelID", mActiveChannelID);
-		outState.putLong("ActiveArticleID", mActiveArticleID);
+		outState.putLong("ActiveChannelID", mSelectedChannelID);
+		outState.putLong("ActiveArticleID", mSelectedArticleID);
 
 		super.onSaveInstanceState(outState);
 	}
@@ -318,8 +346,8 @@ public class NewsArticleFragment extends Fragment {
 		MyLog.i("NewsArticleFragment", "onResume()");
 		Bundle bundle = getArguments();
 		if (bundle != null) {
-			mActiveChannelID = bundle.getLong("ActiveChannelID", 0);
-			mActiveArticleID = bundle.getLong("ActiveArticleID", 0);
+			mSelectedChannelID = bundle.getLong("ActiveChannelID", 0);
+			mSelectedArticleID = bundle.getLong("ActiveArticleID", 0);
 		}
 		super.onResume();
 	}

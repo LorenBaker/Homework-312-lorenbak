@@ -274,6 +274,7 @@ public class TitlesFragment extends Fragment implements LoaderManager.LoaderCall
 
 		SharedPreferences settings = this.getActivity().getSharedPreferences(MainActivity.SHARED_PREFERENCES_NAME,
 				Context.MODE_PRIVATE);
+
 		SharedPreferences.Editor storedStates = settings.edit();
 		storedStates.putInt(MainActivity.STATE_SELECTED_ARTICLE_POSITION, mSelectedArticlePosition);
 		storedStates.putInt(MainActivity.STATE_TITLES_LV_FIRST_VISIBLE_POSITION,
@@ -327,18 +328,11 @@ public class TitlesFragment extends Fragment implements LoaderManager.LoaderCall
 
 		int childCount = mTitlesListView.getChildCount();
 		int lastPositionInView = mListViewFirstVisiblePosition + childCount;
-		if (mSelectedArticlePosition > lastPositionInView || mSelectedArticlePosition < mListViewFirstVisiblePosition) {
+		if (mSelectedArticlePosition > lastPositionInView) {
+			mTitlesListView.smoothScrollToPosition(mSelectedArticlePosition + 1);
+		} else if (mSelectedArticlePosition < mListViewFirstVisiblePosition) {
 			mTitlesListView.smoothScrollToPosition(mSelectedArticlePosition);
 		}
-
-		/*		if (newCursor != null && newCursor.getCount() > 0) {
-					mTitlesListView.setVisibility(View.VISIBLE);
-					tvEmptyFragTitles.setVisibility(View.GONE);
-					mTitlesListView.setSelection(mSelectedArticlePosition);
-				} else {
-					mTitlesListView.setVisibility(View.GONE);
-					tvEmptyFragTitles.setVisibility(View.VISIBLE);
-				}*/
 	}
 
 	@Override
@@ -347,82 +341,5 @@ public class TitlesFragment extends Fragment implements LoaderManager.LoaderCall
 		MyLog.i("TitlesFragment", "onLoaderReset: LoaderID = " + id);
 		mItemsCursorAdaptor.swapCursor(null);
 	}
-
-	/*	public void ShowLoadingIndicator() {
-
-			if (pbLoadingIndicator != null) {
-				pbLoadingIndicator.setVisibility(View.VISIBLE);
-			}
-			if (mTitlesListView != null) {
-				mTitlesListView.setVisibility(View.GONE);
-			}
-			if (tvEmptyFragTitles != null) {
-				tvEmptyFragTitles.setVisibility(View.GONE);
-			}
-		}*/
-
-	/*	public void DismissLoadingIndicator() {
-
-			if (pbLoadingIndicator != null) {
-				pbLoadingIndicator.setVisibility(View.GONE);
-			}
-			if (mTitlesListView != null) {
-				mTitlesListView.setVisibility(View.VISIBLE);
-			}
-			if (tvEmptyFragTitles != null) {
-				tvEmptyFragTitles.setVisibility(View.GONE);
-			}
-		}*/
-
-	/*	public void LoadArticles(String dataFilename) {
-			new LoadArticlesTask().execute(dataFilename);
-		}*/
-
-	/*	private void RefreshArticles(String dataFilename) {
-			AssetManager assetManager = getActivity().getAssets();
-			InputStream input = null;
-			try {
-				input = assetManager.open(dataFilename);
-				ArticlesParser.parse(getActivity(), input);
-				input.close();
-
-			} catch (IOException e) {
-				MyLog.e("Titles_ACTIVITY", "RefreshArticles(): IOException opening " + dataFilename);
-				e.printStackTrace();
-
-			} catch (XmlPullParserException e) {
-				MyLog.e("Titles_ACTIVITY", "RefreshArticles(): XmlPullParserException parsing " + dataFilename);
-				e.printStackTrace();
-			}
-		}*/
-
-	/*	private class LoadArticlesTask extends AsyncTask<String, Void, Void> {
-
-			@Override
-			protected void onPreExecute() {
-				ShowLoadingIndicator();
-			}
-
-			@Override
-			protected Void doInBackground(String... dataFilename) {
-				// simulate an Internet download
-				try {
-					Thread.sleep(3500);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-				RefreshArticles(dataFilename[0]);
-				return null;
-			}
-
-			@Override
-			protected void onPostExecute(Void result) {
-				DismissLoadingIndicator();
-				super.onPostExecute(result);
-			}
-
-		}*/
 
 }

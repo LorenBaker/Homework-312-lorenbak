@@ -61,63 +61,54 @@
 			</TextView>
 		</RelativeLayout>
 
-		<LinearLayout
-			android:id="@+id/articleImageLinearLayout"
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:background="@drawable/rectangle_black_stroke"
-			android:orientation="horizontal" >
-
-			<RelativeLayout
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_margin="5dp" >
-
-				<ImageView
-					android:id="@+id/ivArticleImage"
-					android:layout_width="110dp"
-					android:layout_height="75dp"
-					android:layout_alignParentLeft="true"
-					android:background="@drawable/rectangle_black_stroke"
-					android:contentDescription="News Article Image" />
-
-				<TextView
-					android:id="@+id/tvArticleImageTitle"
-					android:layout_width="wrap_content"
-					android:layout_height="wrap_content"
-					android:layout_below="@id/ivArticleImage"
-					android:hint="Article Image Title"
-					android:textSize="13sp"
-					android:textStyle="normal" >
-				</TextView>
-			</RelativeLayout>
-
-			<TextView
-				android:id="@+id/tvArticleImageDescription"
-				android:layout_width="0dp"
-				android:layout_height="wrap_content"
-				android:layout_margin="5dp"
-				android:layout_weight="1"
-				android:hint="Article Image Description"
-				android:textSize="13sp"
-				android:textStyle="normal" >
-			</TextView>
-		</LinearLayout>
-
 		<ScrollView
 			android:layout_width="match_parent"
 			android:layout_height="0dp"
 			android:layout_margin="5dp"
 			android:layout_weight="1" >
 
-			<TextView
-				android:id="@+id/tvArticleDescription "
+			<LinearLayout
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
-				android:hint="@string/tvContent_hint"
-				android:textSize="15sp"
-				android:textStyle="normal" >
-			</TextView>
+				android:orientation="vertical" >
+
+				<LinearLayout
+					android:id="@+id/articleImageLinearLayout"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:background="@drawable/rectangle_black_stroke"
+					android:orientation="horizontal"
+					android:padding="1dp" >
+
+					<ImageView
+						android:id="@+id/ivArticleImage"
+						android:layout_width="110dp"
+						android:layout_height="75dp"
+						android:contentDescription="News Article Image"
+						android:padding="1dp" />
+
+					<TextView
+						android:id="@+id/tvArticleImageDescription"
+						android:layout_width="0dp"
+						android:layout_height="wrap_content"
+						android:layout_weight="1"
+						android:hint="Article Image Description"
+						android:padding="4dp"
+						android:textSize="13sp"
+						android:textStyle="normal" >
+					</TextView>
+				</LinearLayout>
+
+				<TextView
+					android:id="@+id/tvArticleDescription "
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:hint="@string/tvContent_hint"
+					android:paddingTop="4dp"
+					android:textSize="15sp"
+					android:textStyle="normal" >
+				</TextView>
+			</LinearLayout>
 		</ScrollView>
 
 		<Button

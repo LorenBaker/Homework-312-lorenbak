@@ -19,7 +19,6 @@ public class NewsArticleActivity extends FragmentActivity {
 	private long mSelectedChannelID = -1;
 	private int mSelectedArticlePosition = -1;
 
-	// private NewsArticleFragment mNewsArticleFragment;
 	private View news_article_pager;
 
 	@Override
