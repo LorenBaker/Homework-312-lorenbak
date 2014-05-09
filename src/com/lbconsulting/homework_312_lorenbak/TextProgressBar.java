@@ -19,7 +19,6 @@ public class TextProgressBar extends ProgressBar {
 	private int textPaddingLeftPlusRight_px = 2;
 	private boolean flag_isFirstTime = true;
 
-	private ProgressBar mProgressBar;
 	private Context mContext;
 
 	private Paint textPaint = new Paint();
@@ -42,7 +41,6 @@ public class TextProgressBar extends ProgressBar {
 
 	@Override
 	protected void onAttachedToWindow() {
-		// TODO Auto-generated method stub
 		MyLog.i("TextProgressBar", "onAttachedToWindow()");
 		textSize_px = dpToPx(mContext, textSize_dp);
 		textPaddingLeftPlusRight_px = 2 * dpToPx(mContext, textPaddingLeft_dp);
@@ -141,10 +139,10 @@ public class TextProgressBar extends ProgressBar {
 		return px;
 	}
 
-	private int pxToDp(Context context, int px) {
-		DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
-		int dp = Math.round(px / (displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT));
-		return dp;
-	}
+	/*	private int pxToDp(Context context, int px) {
+			DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+			int dp = Math.round(px / (displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT));
+			return dp;
+		}*/
 
 }

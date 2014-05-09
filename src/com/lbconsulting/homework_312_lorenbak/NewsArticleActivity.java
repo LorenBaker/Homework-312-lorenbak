@@ -1,12 +1,14 @@
 package com.lbconsulting.homework_312_lorenbak;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
-import android.view.View;
 
+import com.lbconsulting.homework_312_lorenbak.R.drawable;
 import com.lbconsulting.homework_312_lorenbak.adapters.NewsArticlesPagerAdapter;
 import com.lbconsulting.homework_312_lorenbak.database.RSS_ItemsTable;
 
@@ -18,8 +20,7 @@ public class NewsArticleActivity extends FragmentActivity {
 	private long mSelectedArticleID = -1;
 	private long mSelectedChannelID = -1;
 	private int mSelectedArticlePosition = -1;
-
-	private View news_article_pager;
+	private boolean mSwipeNotificationShown = false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -76,11 +77,30 @@ public class NewsArticleActivity extends FragmentActivity {
 		mSelectedArticleID = storedStates.getLong(MainActivity.STATE_SELECTED_ARTICLE_ID, -1);
 		mSelectedChannelID = storedStates.getLong(MainActivity.STATE_SELECTED_CHANNEL_ID, -1);
 		mSelectedArticlePosition = storedStates.getInt(MainActivity.STATE_SELECTED_ARTICLE_POSITION, -1);
+		mSwipeNotificationShown = storedStates.getBoolean("SwipeNotificationShown", false);
+
+		if (!mSwipeNotificationShown) {
+			ShowSwipeNotification();
+		}
 
 		if (mSelectedArticlePosition > -1) {
 			mPager.setCurrentItem(mSelectedArticlePosition);
 		}
 		super.onResume();
+	}
+
+	private void ShowSwipeNotification() {
+		new AlertDialog.Builder(this)
+				.setTitle("Swipe to navigate news articles.")
+				.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+
+					public void onClick(DialogInterface dialog, int which) {
+						mSwipeNotificationShown = true;
+					}
+				})
+				.setIcon(drawable.ic_action_warning)
+				.show();
+
 	}
 
 	@Override
@@ -92,6 +112,7 @@ public class NewsArticleActivity extends FragmentActivity {
 		applicationStates.putLong(MainActivity.STATE_SELECTED_ARTICLE_ID, mSelectedArticleID);
 		applicationStates.putLong(MainActivity.STATE_SELECTED_CHANNEL_ID, mSelectedChannelID);
 		applicationStates.putInt(MainActivity.STATE_SELECTED_ARTICLE_POSITION, mSelectedArticlePosition);
+		applicationStates.putBoolean("SwipeNotificationShown", mSwipeNotificationShown);
 
 		applicationStates.commit();
 		super.onPause();

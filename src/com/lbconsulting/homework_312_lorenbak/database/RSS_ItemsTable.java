@@ -397,8 +397,7 @@ public class RSS_ItemsTable {
 		return channelID;
 	}
 
-	public static int getNumberOfSelectedItems(Context context, long channelID) {
-		int numberOfSelectedItems = 0;
+	public static Cursor getAllSelectedItems(Context context, long channelID) {
 
 		Uri uri = CONTENT_URI;
 		String[] projection = PROJECTION_ITEM_ID;
@@ -421,6 +420,14 @@ public class RSS_ItemsTable {
 			MyLog.e("TABLE_ITEMS", "Exception error in getAllItemsCursor:");
 			e.printStackTrace();
 		}
+
+		return cursor;
+	}
+
+	public static int getNumberOfSelectedItems(Context context, long channelID) {
+		int numberOfSelectedItems = 0;
+
+		Cursor cursor = getAllSelectedItems(context, channelID);
 
 		if (cursor != null) {
 			numberOfSelectedItems = cursor.getCount();
@@ -581,26 +588,23 @@ public class RSS_ItemsTable {
 			String selection = COL_ITEM_ID + " = ?";
 			String selectionArgs[] = new String[] { String.valueOf(itemID) };
 			numberOfDeletedRecords = cr.delete(uri, selection, selectionArgs);
+			RSS_ImagesTable.DeleteAllImagesInItem(context, itemID);
 		}
 		return numberOfDeletedRecords;
 	}
 
 	public static int DeleteAllSelectedItems(Context context, long channelID) {
-		int numberOfDeletedRecords = -1;
+		int numberOfDeletedRecords = 0;
 
-		Uri uri = CONTENT_URI;
-		String where = null;
-		String selectionArgs[] = null;
-		if (channelID > 1) {
-			where = COL_ITEM_SELECTED + " = ? AND " + COL_CHANNEL_ID + " = ?";
-			selectionArgs = new String[] { String.valueOf(1), String.valueOf(channelID) };
-		} else {
-			where = COL_ITEM_SELECTED + " = ?";
-			selectionArgs = new String[] { String.valueOf(1) };
+		Cursor cursor = getAllSelectedItems(context, channelID);
+		if (cursor != null) {
+			long itemID = -1;
+			while (cursor.moveToNext()) {
+				itemID = cursor.getLong(cursor.getColumnIndexOrThrow(COL_ITEM_ID));
+				numberOfDeletedRecords += DeleteItem(context, itemID);
+			}
+			cursor.close();
 		}
-
-		ContentResolver cr = context.getContentResolver();
-		numberOfDeletedRecords = cr.delete(uri, where, selectionArgs);
 
 		return numberOfDeletedRecords;
 	}

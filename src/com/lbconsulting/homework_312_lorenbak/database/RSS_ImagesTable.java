@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 
+import com.lbconsulting.homework_312_lorenbak.MainActivity;
 import com.lbconsulting.homework_312_lorenbak.MyLog;
 
 public class RSS_ImagesTable {
@@ -193,6 +194,27 @@ public class RSS_ImagesTable {
 		return cursor;
 	}
 
+	public static Cursor getAllImagesInItem(Context context, long itemID) {
+		Cursor cursor = null;
+
+		Uri uri = CONTENT_URI;
+		String[] projection = PROJECTION_ALL;
+		String selection = COL_ITEM_ID + " = ?";
+		String selectionArgs[] = new String[] { String.valueOf(itemID) };
+		String sortOrder = null;
+
+		ContentResolver cr = context.getContentResolver();
+
+		try {
+			cursor = cr.query(uri, projection, selection, selectionArgs, sortOrder);
+		} catch (Exception e) {
+			MyLog.e("RSS_ImagesTable", "Exception error in getAllImagesInItem:");
+			e.printStackTrace();
+		}
+
+		return cursor;
+	}
+
 	public static Cursor getChannelImageURLs(Context context) {
 		Cursor cursor = null;
 		Uri uri = CONTENT_URI;
@@ -292,7 +314,32 @@ public class RSS_ImagesTable {
 		return numberOfDeletedRecords;
 	}
 
-	private static int DeleteImage(Context context, long channelID) {
+	public static int DeleteAllImagesInItem(Context context, long itemID) {
+
+		Cursor cursor = getAllImagesInItem(context, itemID);
+		if (cursor != null) {
+			long imageID = -1;
+			String key;
+			while (cursor.moveToNext()) {
+				imageID = cursor.getLong(cursor.getColumnIndexOrThrow(COL_IMAGES_ID));
+				key = String.valueOf(imageID);
+				MainActivity.getDiskCache().remove(key);
+			}
+			cursor.close();
+		}
+
+		int numberOfDeletedRecords = -1;
+		if (itemID > 0) {
+			ContentResolver cr = context.getContentResolver();
+			Uri uri = CONTENT_URI;
+			String selection = COL_ITEM_ID + " = ?";
+			String selectionArgs[] = new String[] { String.valueOf(itemID) };
+			numberOfDeletedRecords = cr.delete(uri, selection, selectionArgs);
+		}
+		return numberOfDeletedRecords;
+	}
+
+	public static int DeleteImage(Context context, long channelID) {
 		int numberOfDeletedRecords = -1;
 		if (channelID > 0) {
 			ContentResolver cr = context.getContentResolver();
@@ -304,7 +351,7 @@ public class RSS_ImagesTable {
 		return numberOfDeletedRecords;
 	}
 
-	private static int DeleteImage(Context context, long channelID, long itemID) {
+	public static int DeleteImage(Context context, long channelID, long itemID) {
 		int numberOfDeletedRecords = -1;
 		if (channelID > 0 && itemID > 0) {
 			ContentResolver cr = context.getContentResolver();
@@ -315,5 +362,4 @@ public class RSS_ImagesTable {
 		}
 		return numberOfDeletedRecords;
 	}
-
 }

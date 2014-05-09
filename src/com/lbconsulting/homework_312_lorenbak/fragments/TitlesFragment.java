@@ -40,8 +40,6 @@ public class TitlesFragment extends Fragment implements LoaderManager.LoaderCall
 
 	private TitlesCursorAdaptor mItemsCursorAdaptor;
 	private ListView mTitlesListView;
-	/*private TextProgressBar pbLoadingIndicator;
-	private TextView tvEmptyFragTitles;*/
 
 	private int ITEMS_LOADER_ID = 1;
 	private LoaderManager mLoaderManager = null;
@@ -58,7 +56,6 @@ public class TitlesFragment extends Fragment implements LoaderManager.LoaderCall
 
 	public static TitlesFragment newInstance(long activeChannelID, int selectedArticlePosition) {
 		TitlesFragment f = new TitlesFragment();
-		// Supply activeChannelID input as an argument.
 		Bundle args = new Bundle();
 		args.putLong(MainActivity.STATE_SELECTED_CHANNEL_ID, activeChannelID);
 		args.putInt(MainActivity.STATE_SELECTED_ARTICLE_POSITION, selectedArticlePosition);
@@ -222,12 +219,6 @@ public class TitlesFragment extends Fragment implements LoaderManager.LoaderCall
 			});
 
 		}
-
-		/*		tvEmptyFragTitles = (TextView) view.findViewById(R.id.tvEmptyFragTitles);
-				pbLoadingIndicator = (TextProgressBar) view.findViewById(R.id.pbLoadingIndicator);
-				if (pbLoadingIndicator != null) {
-					pbLoadingIndicator.setText("Loading Articles");
-				}*/
 
 		mTitlesFragmentCallbacks = this;
 

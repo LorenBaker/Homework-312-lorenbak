@@ -34,8 +34,6 @@ public class NewsArticleFragment extends Fragment {
 	private LinearLayout fragNewsArticleLinearLayout;
 	private int mImageWidth_px;
 
-	// private TextView tvEmptyNewsArticle;
-
 	public NewsArticleFragment() {
 		// Empty constructor
 	}
@@ -216,10 +214,7 @@ public class NewsArticleFragment extends Fragment {
 									articleImageLinearLayout.setVisibility(View.GONE);
 								}
 							}
-							// set as visible
-							/*							if (articleImageLinearLayout != null) {
-															articleImageLinearLayout.setVisibility(View.VISIBLE);
-														}*/
+
 						} else {
 							// there is no image for this article ...
 							if (articleImageLinearLayout != null) {

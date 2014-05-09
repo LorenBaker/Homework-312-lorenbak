@@ -130,7 +130,6 @@ public class RSS_Parser {
 	}
 
 	private static void readFeed(XmlPullParser parser) throws XmlPullParserException, IOException {
-		// mRSSChannel = new RSS_Channel();
 		channelsOptionalContentValues = new ContentValues();
 		channelsRequiredContentValues = new ContentValues();
 		channelItems = new ArrayList<ContentValues>();
@@ -211,8 +210,6 @@ public class RSS_Parser {
 				skip(parser);
 			}
 		}
-
-		// return mRSSChannel;
 	}
 
 	private static void readChannelItem(XmlPullParser parser) throws XmlPullParserException, IOException {
@@ -451,21 +448,18 @@ public class RSS_Parser {
 		parser.require(XmlPullParser.START_TAG, ns, RSS_Channel.TAG_CHANNEL_TITLE);
 		String channelTitle = readText(parser);
 		channelsRequiredContentValues.put(RSS_ChannelsTable.COL_TITLE, channelTitle);
-		// mRSSChannel.setTitle(channelTitle);
 	}
 
 	private static void readChannelLink(XmlPullParser parser) throws XmlPullParserException, IOException {
 		parser.require(XmlPullParser.START_TAG, ns, RSS_Channel.TAG_CHANNEL_LINK);
 		String channelLink = readText(parser);
 		channelsRequiredContentValues.put(RSS_ChannelsTable.COL_LINK, channelLink);
-		// mRSSChannel.setLink(channelLink);
 	}
 
 	private static void readChannelDescription(XmlPullParser parser) throws XmlPullParserException, IOException {
 		parser.require(XmlPullParser.START_TAG, ns, RSS_Channel.TAG_CHANNEL_DESCRIPTION);
 		String channelDescription = readText(parser);
 		channelsRequiredContentValues.put(RSS_ChannelsTable.COL_DESCRIPTION, channelDescription);
-		// mRSSChannel.setDescription(channelDescription);
 	}
 
 	private static void readChannelCategory(XmlPullParser parser) throws XmlPullParserException, IOException {
@@ -479,36 +473,30 @@ public class RSS_Parser {
 		if (!channelCategory.isEmpty()) {
 			channelsOptionalContentValues.put(RSS_ChannelsTable.COL_CATEGORY, channelCategory);
 		}
-
-		// mRSSChannel.setCategory(channelCategory);
 	}
 
 	private static void readChannelCloud(XmlPullParser parser) throws XmlPullParserException, IOException {
 		parser.require(XmlPullParser.START_TAG, ns, RSS_Channel.TAG_CHANNEL_CLOUD);
 		String channelCloud = readText(parser);
 		channelsOptionalContentValues.put(RSS_ChannelsTable.COL_CLOUD, channelCloud);
-		// mRSSChannel.setCloud(channelCloud);
 	}
 
 	private static void readChannelCopyright(XmlPullParser parser) throws XmlPullParserException, IOException {
 		parser.require(XmlPullParser.START_TAG, ns, RSS_Channel.TAG_CHANNEL_COPYRIGHT);
 		String channelCopyright = readText(parser);
 		channelsOptionalContentValues.put(RSS_ChannelsTable.COL_COPYRIGHT, channelCopyright);
-		// mRSSChannel.setCopyright(channelCopyright);
 	}
 
 	private static void readChannelDocs(XmlPullParser parser) throws XmlPullParserException, IOException {
 		parser.require(XmlPullParser.START_TAG, ns, RSS_Channel.TAG_CHANNEL_DOCS);
 		String channelDocs = readText(parser);
 		channelsOptionalContentValues.put(RSS_ChannelsTable.COL_DOCS, channelDocs);
-		// mRSSChannel.setDocs(channelDocs);
 	}
 
 	private static void readChannelGenerator(XmlPullParser parser) throws XmlPullParserException, IOException {
 		parser.require(XmlPullParser.START_TAG, ns, RSS_Channel.TAG_CHANNEL_GENERATOR);
 		String channelGenerator = readText(parser);
 		channelsOptionalContentValues.put(RSS_ChannelsTable.COL_GENERATOR, channelGenerator);
-		// mRSSChannel.setGenerator(channelGenerator);
 	}
 
 	private static void readChannelImage(XmlPullParser parser) throws XmlPullParserException, IOException {
@@ -560,11 +548,6 @@ public class RSS_Parser {
 		if (imageHasRequiredElements(imagesContentValues)) {
 			channelImage.add(imagesContentValues);
 		}
-		/*		RSS_Image newImage = mRSSChannel.new RSS_Image(Url, Title, Link, Width, Height, Description);
-				if (newImage.hasRequiredElements()) {
-					mRSSChannel.setImage(newImage);
-				}*/
-
 	}
 
 	private static boolean imageHasRequiredElements(ContentValues imageContentValues) {
@@ -581,7 +564,6 @@ public class RSS_Parser {
 		parser.require(XmlPullParser.START_TAG, ns, RSS_Channel.TAG_CHANNEL_LANGUAGE);
 		String channelLanguage = readText(parser);
 		channelsOptionalContentValues.put(RSS_ChannelsTable.COL_LANGUAGE, channelLanguage);
-		// mRSSChannel.setLanguage(channelLanguage);
 	}
 
 	private static void readChannelLastBuildDate(XmlPullParser parser) throws XmlPullParserException, IOException {
@@ -589,14 +571,12 @@ public class RSS_Parser {
 		String lastBuildDate = readText(parser);
 		long channelLastBuildDate = dateStringToMills(lastBuildDate);
 		channelsOptionalContentValues.put(RSS_ChannelsTable.COL_LAST_BUILD_DATE, channelLastBuildDate);
-		// mRSSChannel.setLastBuildDate(channelLastBuildDate);
 	}
 
 	private static void readChannelManagingEditor(XmlPullParser parser) throws XmlPullParserException, IOException {
 		parser.require(XmlPullParser.START_TAG, ns, RSS_Channel.TAG_CHANNEL_MANAGING_EDITOR);
 		String channelManagingEditor = readText(parser);
 		channelsOptionalContentValues.put(RSS_ChannelsTable.COL_MANAGING_EDITOR, channelManagingEditor);
-		// mRSSChannel.setManagingEditor(channelManagingEditor);
 	}
 
 	private static void readChannelPubDate(XmlPullParser parser) throws XmlPullParserException, IOException {
@@ -604,14 +584,12 @@ public class RSS_Parser {
 		String pubDate = readText(parser);
 		long channelPubDate = dateStringToMills(pubDate);
 		channelsOptionalContentValues.put(RSS_ChannelsTable.COL_PUB_DATE, channelPubDate);
-		// mRSSChannel.setPubDate(channelPubDate);
 	}
 
 	private static void readChannelRating(XmlPullParser parser) throws XmlPullParserException, IOException {
 		parser.require(XmlPullParser.START_TAG, ns, RSS_Channel.TAG_CHANNEL_RATING);
 		String channelRating = readText(parser);
 		channelsOptionalContentValues.put(RSS_ChannelsTable.COL_RATING, channelRating);
-		// mRSSChannel.setRating(channelRating);
 	}
 
 	private static void readChannelSkipDays(XmlPullParser parser) throws XmlPullParserException, IOException {
@@ -725,14 +703,12 @@ public class RSS_Parser {
 		parser.require(XmlPullParser.START_TAG, ns, RSS_Channel.TAG_CHANNEL_TTL);
 		String channelTTL = readText(parser);
 		channelsOptionalContentValues.put(RSS_ChannelsTable.COL_TTL, channelTTL);
-		// mRSSChannel.setTTL(channelTTL);
 	}
 
 	private static void readChannelWebMaster(XmlPullParser parser) throws XmlPullParserException, IOException {
 		parser.require(XmlPullParser.START_TAG, ns, RSS_Channel.TAG_CHANNEL_WEBMASTER);
 		String channelWebMaster = readText(parser);
 		channelsOptionalContentValues.put(RSS_ChannelsTable.COL_WEBMASTER, channelWebMaster);
-		// mRSSChannel.setWebMaster(channelWebMaster);
 	}
 
 	private static void skip(XmlPullParser parser) throws XmlPullParserException, IOException {
@@ -780,11 +756,8 @@ public class RSS_Parser {
 		HashMap<String, String> attrs = null;
 		int attributeCount = parser.getAttributeCount();
 		if (attributeCount > 0) {
-			// MyLog.d("RSS_Parser:getAttributes", "Attributes for [" + parser.getName() + "]");
 			attrs = new HashMap<String, String>(attributeCount);
 			for (int x = 0; x < attributeCount; x++) {
-				/*MyLog.d("RSS_Parser:getAttributes", "\t[" + parser.getAttributeName(x) + "]=" +
-						"[" + parser.getAttributeValue(x) + "]");*/
 				String name = parser.getAttributeName(x);
 				String value = parser.getAttributeValue(x);
 				if (!name.isEmpty()) {
@@ -793,7 +766,6 @@ public class RSS_Parser {
 			}
 		}
 		else {
-			// MyLog.d("RSS_Parser:getAttributes", "Ther are NO ATTRIBUTES for [" + parser.getName() + "]");
 		}
 		return attrs;
 	}

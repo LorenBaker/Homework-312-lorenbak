@@ -5,11 +5,13 @@
 		<item>[none]</item>
 		<item>https://news.google.com/news/section?topic=w&amp;output=rss</item>
 		<item>http://news.yahoo.com/rss/world/</item>
+		<item>http://seattletimes.com/rss/home.xml</item>
 	</string-array>
 	<string-array name="newsFeedTitles">
 		<item>[All News Feeds]</item>
 		<item>World - Google News</item>
 		<item>Yahoo News - Latest News &amp; Headlines</item>
+		<item>The Seattle Times: Home</item>
 	</string-array>
 
 </resources>

@@ -22,7 +22,7 @@ public class DiskLruImageCache {
 
 	private DiskLruCache mDiskCache;
 	private CompressFormat mCompressFormat = CompressFormat.JPEG;
-	private int mCompressQuality = 70;
+	private int mCompressQuality = 80;
 	private static final int APP_VERSION = 1;
 	private static final int VALUE_COUNT = 1;
 
@@ -33,6 +33,7 @@ public class DiskLruImageCache {
 			mDiskCache = DiskLruCache.open(diskCacheDir, APP_VERSION, VALUE_COUNT, diskCacheSize);
 			mCompressFormat = compressFormat;
 			mCompressQuality = quality;
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -149,6 +150,16 @@ public class DiskLruImageCache {
 
 		return contained;
 
+	}
+
+	public void remove(String key) {
+		if (containsKey(key)) {
+			try {
+				mDiskCache.remove(key);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public void clearCache() {

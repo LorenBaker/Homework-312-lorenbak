@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import org.xmlpull.v1.XmlPullParserException;
 
 import android.app.LoaderManager;
+import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
@@ -22,6 +23,7 @@ import android.graphics.BitmapFactory;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.util.LruCache;
@@ -68,7 +70,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 	private static LruCache<String, Bitmap> mMemoryCache;
 	private static DiskLruImageCache mDiskCache;
 	private static int DISK_CACHE_SIZE = 1024 * 1024 * 16; // 16mb in bytes
-	private static String DISK_CACH_DIRECTORY = "HW312_Images";
+	public static String DISK_CACH_DIRECTORY = "HW312_Images";
 
 	public static LruCache<String, Bitmap> getMemoryCache() {
 		return mMemoryCache;
@@ -77,6 +79,17 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 	public static DiskLruImageCache getDiskCache() {
 		return mDiskCache;
 	}
+
+	private SensorManager mSensorManager;
+	private Sensor mAccelerometerSensor;
+
+	private final float SHAKE_EVENT_TRIGGER = (float) 150;
+	private final float ALPAH = (float) 0.8;
+	private final float ONE_MINUS_ALPHA = 1 - ALPAH;
+	private float gravity[] = { 0, 0, 0 };
+	private float linear_acceleration[] = { 0, 0, 0 };
+	private float previous_linear_acceleration[] = { 0, 0, 0 };
+	private long mPrevious_time = System.currentTimeMillis();
 
 	private TextView tvEmptyFragTitles;
 	private TextProgressBar pbLoadingIndicator;
@@ -122,6 +135,9 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 		final ActionBar actionBar = getSupportActionBar();
 		actionBar.setDisplayShowTitleEnabled(false);
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
+
+		mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+		mAccelerometerSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
 		// Set up the adapter for the ActionBar dropdown list
 		mNewsFeedsCursorAdapter = new NewsFeedsSpinnerCursorAdapter(this, null, 0);
@@ -181,40 +197,6 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 	}
 
 	@Override
-	public void onRestoreInstanceState(Bundle savedInstanceState) {
-		MyLog.i("Main_ACTIVITY", "onRestoreInstanceState()");
-		// Restore the previously serialized current dropdown position.
-		if (savedInstanceState.containsKey(STATE_SELECTED_CHANNEL_POSITION)) {
-			getSupportActionBar().setSelectedNavigationItem(savedInstanceState.getInt(STATE_SELECTED_CHANNEL_POSITION));
-		}
-
-		if (savedInstanceState.containsKey(STATE_SELECTED_CHANNEL_ID)) {
-			mSelectedChannelID = savedInstanceState.getLong(STATE_SELECTED_CHANNEL_ID);
-		}
-		if (savedInstanceState.containsKey(STATE_SELECTED_ARTICLE_ID)) {
-			mSelectedArticleID = savedInstanceState.getLong(STATE_SELECTED_ARTICLE_ID);
-		}
-
-		if (savedInstanceState.containsKey(STATE_SELECTED_ARTICLE_POSITION)) {
-			mSelectedArticlePosition = savedInstanceState.getInt(STATE_SELECTED_ARTICLE_POSITION);
-		}
-	}
-
-	@Override
-	public void onSaveInstanceState(Bundle outState) {
-		MyLog.i("Main_ACTIVITY", "onSaveInstanceState()");
-		// Serialize the current dropdown position.
-		outState.putInt(STATE_SELECTED_CHANNEL_POSITION, getSupportActionBar().getSelectedNavigationIndex());
-		outState.putLong(STATE_SELECTED_CHANNEL_ID, mSelectedChannelID);
-
-		outState.putLong(STATE_SELECTED_ARTICLE_ID, mSelectedArticleID);
-		if (mSelectedArticlePosition < 0) {
-			mSelectedArticlePosition = 0;
-		}
-		outState.putInt(STATE_SELECTED_ARTICLE_POSITION, mSelectedArticlePosition);
-	}
-
-	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 
 		// Inflate the menu; this adds items to the action bar if it is present.
@@ -241,6 +223,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 	@Override
 	protected void onPause() {
 		MyLog.i("Main_ACTIVITY", "onPause()");
+		mSensorManager.unregisterListener(this);
 
 		SharedPreferences settings = getSharedPreferences(SHARED_PREFERENCES_NAME, MODE_PRIVATE);
 		SharedPreferences.Editor storedStates = settings.edit();
@@ -262,6 +245,8 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 	@Override
 	protected void onResume() {
 		MyLog.i("Main_ACTIVITY", "onResume()");
+		mSensorManager.registerListener(this, mAccelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+
 		SharedPreferences storedStates = getSharedPreferences(SHARED_PREFERENCES_NAME, MODE_PRIVATE);
 		mSelectedArticleID = storedStates.getLong(STATE_SELECTED_ARTICLE_ID, -1);
 		mSelectedArticlePosition = storedStates.getInt(STATE_SELECTED_ARTICLE_POSITION, 0);
@@ -271,14 +256,6 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 
 		mListViewFirstVisiblePosition = storedStates.getInt(MainActivity.STATE_TITLES_LV_FIRST_VISIBLE_POSITION, 0);
 		mListViewTop = storedStates.getInt(MainActivity.STATE_TITLES_LV_TOP, 0);
-
-		/*		mTitlesFragment = TitlesFragment.newInstance(mSelectedChannelID, mSelectedArticlePosition);
-				getSupportFragmentManager().beginTransaction()
-						.replace(R.id.container, mTitlesFragment, FRAGMENT_TITLES)
-						.commit();*/
-
-		// selecting the channel position (navigation item) loads the title fragment
-		// getSupportActionBar().setSelectedNavigationItem(mSelectedChannelPosition);
 
 		super.onResume();
 	}
@@ -332,19 +309,12 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 			RefreshArticles();
 			LoadChannelIcons();
 			LoadArticleImages();
-
 			return null;
 		}
 
 		@Override
 		protected void onPostExecute(Void result) {
-			// Allow normal notification of updates
-			// HW311ContentProvider.setSupressUpdates(false);
-			// Restart the loader to show database update changes
-			// mLoaderManager.restartLoader(ITEMS_LOADER_ID, null, mTitlesFragmentCallbacks);
-			// Hide the loading indicator and show the article list
 			DismissLoadingIndicator();
-
 			super.onPostExecute(result);
 		}
 
@@ -506,7 +476,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 		mListViewFirstVisiblePosition = 0;
 		mListViewTop = 0;
 		mTitlesFragment = TitlesFragment.newInstance(mSelectedChannelID, mSelectedArticlePosition);
-		// mTitlesFragment = TitlesFragment.newInstance(mSelectedChannelID, 0);
+
 		getSupportFragmentManager().beginTransaction()
 				.replace(R.id.container, mTitlesFragment, FRAGMENT_TITLES)
 				.commit();
@@ -516,13 +486,50 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 
 	@Override
 	public void onAccuracyChanged(Sensor sensor, int accuracy) {
-		// TODO Auto-generated method stub
+		// do nothing
 
 	}
 
 	@Override
 	public void onSensorChanged(SensorEvent event) {
-		// TODO Auto-generated method stub
+		if (event.sensor == mAccelerometerSensor) {
+
+			long curTime = System.currentTimeMillis();
+			long diffTime = (curTime - mPrevious_time);
+			if (diffTime > 100) {
+
+				// alpha is calculated as t / (t + dT)
+				// with t, the low-pass filter's time-constant
+				// and dT, the event delivery rate
+
+				gravity[0] = ALPAH * gravity[0] + (ONE_MINUS_ALPHA) * event.values[0];
+				gravity[1] = ALPAH * gravity[1] + (ONE_MINUS_ALPHA) * event.values[1];
+				gravity[2] = ALPAH * gravity[2] + (ONE_MINUS_ALPHA) * event.values[2];
+
+				linear_acceleration[0] = event.values[0] - gravity[0];
+				linear_acceleration[1] = event.values[1] - gravity[1];
+				linear_acceleration[2] = event.values[2] - gravity[2];
+
+				float shakeEventStrength =
+						(
+								Math.abs(linear_acceleration[0] - previous_linear_acceleration[0])
+										+ Math.abs(linear_acceleration[1] - previous_linear_acceleration[1])
+										+ Math.abs(linear_acceleration[2] - previous_linear_acceleration[2])
+								) / diffTime * 1000;
+
+				// MyLog.i("Main_ACTIVITY", "onSensorChanged(): shakeEventStrength:" + shakeEventStrength);
+
+				if (shakeEventStrength > SHAKE_EVENT_TRIGGER) {
+					// MyLog.d("Main_ACTIVITY", "onSensorChanged(): shakeEventStrength >" + SHAKE_EVENT_TRIGGER);
+					LoadArticles();
+				}
+
+				previous_linear_acceleration[0] = linear_acceleration[0];
+				previous_linear_acceleration[1] = linear_acceleration[1];
+				previous_linear_acceleration[2] = linear_acceleration[2];
+				mPrevious_time = curTime;
+			}
+		}
 
 	}
 
