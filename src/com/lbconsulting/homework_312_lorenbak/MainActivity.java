@@ -479,6 +479,7 @@ public class MainActivity extends ActionBarActivity implements ActionBar.OnNavig
 
 		getSupportFragmentManager().beginTransaction()
 				.replace(R.id.container, mTitlesFragment, FRAGMENT_TITLES)
+				.setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out)
 				.commit();
 
 		return true;
